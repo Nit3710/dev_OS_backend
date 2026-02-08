@@ -3,6 +3,7 @@ package com.devos.core.service.impl;
 import com.devos.core.dto.UserDto;
 import com.devos.core.domain.entity.User;
 import com.devos.core.domain.entity.UserSettings;
+import com.devos.core.exception.UserAlreadyExistsException;
 import com.devos.core.repository.UserRepository;
 import com.devos.core.service.AuthService;
 import com.devos.core.service.UserService;
@@ -40,11 +41,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User createUser(UserDto userDto) {
         if (userRepository.existsByUsername(userDto.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new UserAlreadyExistsException(userDto.getUsername());
         }
 
         if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new UserAlreadyExistsException(userDto.getUsername(), userDto.getEmail());
         }
 
         // Use a default password for now - this should be handled differently in production
@@ -69,6 +70,7 @@ public class UserServiceImpl implements UserService {
         user.setSettings(settings);
 
         User savedUser = userRepository.save(user);
+        userRepository.flush(); // Ensure data is written to DB immediately
         log.info("Created user: {}", savedUser.getUsername());
         
         return savedUser;

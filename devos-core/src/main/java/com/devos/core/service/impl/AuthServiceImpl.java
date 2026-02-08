@@ -3,6 +3,7 @@ package com.devos.core.service.impl;
 import com.devos.core.dto.AuthResponse;
 import com.devos.core.dto.UserDto;
 import com.devos.core.domain.entity.User;
+import com.devos.core.exception.DevosException;
 import com.devos.core.repository.UserRepository;
 import com.devos.core.service.AuthService;
 import io.jsonwebtoken.Claims;
@@ -13,6 +14,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,11 +49,11 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new BadCredentialsException("Invalid username or password");
         }
 
         if (!user.getEnabled()) {
-            throw new RuntimeException("User account is disabled");
+            throw new DevosException("User account is disabled");
         }
 
         String token = generateToken(user);
