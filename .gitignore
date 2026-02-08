@@ -1,0 +1,5 @@
+# Project exclude paths
+/devos-ai-integration/target/
+/devos-api/target/
+/devos-application/target/
+/devos-core/target/

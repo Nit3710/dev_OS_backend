@@ -1,0 +1,100 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: devos-backend
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/devos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: devos
+    password: devos123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  
+  redis:
+    host: localhost
+    port: 6379
+    password: 
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+  
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+logging:
+  level:
+    com.devos: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/devos.log
+    max-size: 10MB
+    max-history: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+devos:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:devos-secret-key-for-development-only-change-in-production}
+      expiration: 86400000 # 24 hours
+      refresh-expiration: 604800000 # 7 days
+  
+  ai:
+    default-provider: openai
+    max-tokens-per-request: 4000
+    timeout: 30000
+    retry-attempts: 3
+  
+  file:
+    max-file-size: 10MB
+    allowed-extensions: .java,.js,.ts,.jsx,.tsx,.py,.go,.rs,.cpp,.c,.h,.hpp,.cs,.php,.rb,.swift,.kt,.scala,.clj,.hs,.ml,.fs,.dart,.lua,.sh,.bash,.zsh,.fish,.ps1,.bat,.cmd,.sql,.json,.xml,.yaml,.yml,.toml,.ini,.cfg,.conf,.md,.txt,.rst,.adoc,.html,.css,.scss,.less,.sass,.vue,.svelte,.elm,.purs,.idr,.agda,.coq,.lean,.hol,.isabelle,.twelf,.maude,.rewite,.lp,.pro,.pl,.pyl,.pyw,.r,.R,.Rmd,.q,.qs,.k,.kt,.kts,.nim,.nimble,.v,.vsh,.vmod,.cr,.ecr,.sln,.csproj,.vbproj,.fsproj,.xcodeproj,.xcworkspace,.pbxproj,.xcconfig,.plist,.storyboard,.xib,.strings,.pch,.h,.m,.mm,.swift,.dart,.gradle,.properties,.env,.gitignore,.dockerignore,.dockerfile,.makefile,.cmake,.mk,.build,.sbt,.project,.classpath,.settings,.idea,.vscode,.editorconfig,.eslintrc,.prettierrc,.babelrc,.tsconfig,.webpack,.rollup,.vite,.parcel,.gulp,.grunt,.npm,.yarn,.pnpm,.package-lock,.yarn-lock,.pnpm-lock
+  
+  git:
+    default-branch: main
+    auto-commit: false
+    commit-message-template: "DevOS: {action} - {description}"
