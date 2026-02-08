@@ -10,7 +10,9 @@ public interface UserService extends org.springframework.security.core.userdetai
 
     User createUser(UserDto userDto);
 
-    User updateUser(String token, UserDto userDto);
+    User updateUser(UserDto userDto);
+
+    User updateUser(Long userId, UserDto userDto);
 
     UserSettings updateUserSettings(User user, UserSettings settings);
 
@@ -25,4 +27,6 @@ public interface UserService extends org.springframework.security.core.userdetai
     boolean isCurrentUser(Long userId, org.springframework.security.core.Authentication authentication);
 
     Long getUserIdFromToken(String token);
+
+    void changePassword(Long userId, String oldPassword, String newPassword);
 }

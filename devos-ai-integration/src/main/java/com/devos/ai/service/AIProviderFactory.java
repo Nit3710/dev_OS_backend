@@ -16,7 +16,6 @@ public class AIProviderFactory {
 
     private final List<AIService> aiServices;
     private final Map<LLMProvider.ProviderType, AIService> serviceMap = new HashMap<>();
-
     public AIService getService(LLMProvider.ProviderType providerType) {
         if (serviceMap.isEmpty()) {
             initializeServiceMap();

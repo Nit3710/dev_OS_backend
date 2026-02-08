@@ -26,6 +26,9 @@ public class UserDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
+    // Password field for registration/update (not included in from() method)
+    private String password;
+    
     public static UserDto from(User user) {
         return UserDto.builder()
                 .id(user.getId())

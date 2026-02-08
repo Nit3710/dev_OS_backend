@@ -47,10 +47,13 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Email already exists");
         }
 
+        // Use a default password for now - this should be handled differently in production
+        String password = userDto.getPassword() != null ? userDto.getPassword() : "defaultPassword123";
+
         User user = User.builder()
                 .username(userDto.getUsername())
                 .email(userDto.getEmail())
-                .passwordHash(passwordEncoder.encode("defaultPassword123")) // Should be sent in request
+                .passwordHash(passwordEncoder.encode(password))
                 .firstName(userDto.getFirstName())
                 .lastName(userDto.getLastName())
                 .avatarUrl(userDto.getAvatarUrl())
@@ -73,12 +76,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User updateUser(String token, UserDto userDto) {
-        User currentUser = getUserFromToken(token);
+    public User updateUser(UserDto userDto) {
+        // This method needs a user ID to update, so we'll use the ID from the DTO
+        if (userDto.getId() == null) {
+            throw new RuntimeException("User ID is required for update");
+        }
+        return updateUser(userDto.getId(), userDto);
+    }
+
+    @Override
+    @Transactional
+    public User updateUser(Long userId, UserDto userDto) {
+        User currentUser = getUserById(userId);
         
         currentUser.setFirstName(userDto.getFirstName());
         currentUser.setLastName(userDto.getLastName());
         currentUser.setAvatarUrl(userDto.getAvatarUrl());
+        currentUser.setEmail(userDto.getEmail());
         
         // Only allow role changes for admins
         if (currentUser.getRole() == User.UserRole.ADMIN && userDto.getRole() != null) {
@@ -89,6 +103,23 @@ public class UserServiceImpl implements UserService {
         log.info("Updated user: {}", updatedUser.getUsername());
         
         return updatedUser;
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = getUserById(userId);
+        
+        // Verify old password
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new RuntimeException("Invalid old password");
+        }
+        
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        
+        log.info("Changed password for user: {}", user.getUsername());
     }
 
     @Override

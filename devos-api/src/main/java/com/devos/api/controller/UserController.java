@@ -38,7 +38,7 @@ public class UserController {
             @Valid @RequestBody UserDto userDto) {
         
         String jwtToken = token.replace("Bearer ", "");
-        User user = userService.updateUser(jwtToken, userDto);
+        User user = userService.updateUser(Long.valueOf(jwtToken), userDto);
         
         log.info("Profile updated for user: {}", user.getUsername());
         return ResponseEntity.ok(UserDto.from(user));

@@ -1,6 +1,7 @@
 package com.devos.api.controller;
 
 import com.devos.api.dto.AuthRequest;
+import com.devos.api.dto.RegisterRequest;
 import com.devos.core.dto.AuthResponse;
 import com.devos.core.dto.UserDto;
 import com.devos.core.domain.entity.User;
@@ -13,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
@@ -28,6 +29,27 @@ public class AuthController {
         AuthResponse response = authService.authenticate(authRequest.getUsername(), authRequest.getPassword());
         
         log.info("Login successful for user: {}", authRequest.getUsername());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        log.info("Registration attempt for user: {}", registerRequest.getUsername());
+        
+        // Create user
+        UserDto userDto = new UserDto();
+        userDto.setUsername(registerRequest.getUsername());
+        userDto.setEmail(registerRequest.getEmail());
+        userDto.setFirstName(registerRequest.getFirstName());
+        userDto.setLastName(registerRequest.getLastName());
+        userDto.setPassword(registerRequest.getPassword()); // Set password for user creation
+        
+        User user = userService.createUser(userDto);
+        
+        // Authenticate and return tokens
+        AuthResponse response = authService.authenticate(registerRequest.getUsername(), registerRequest.getPassword());
+        
+        log.info("Registration successful for user: {}", user.getUsername());
         return ResponseEntity.ok(response);
     }
 
@@ -58,13 +80,27 @@ public class AuthController {
         return ResponseEntity.ok(UserDto.from(user));
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<UserDto> register(@Valid @RequestBody UserDto userDto) {
-        log.info("Registration attempt for user: {}", userDto.getUsername());
+    @PutMapping("/profile")
+    public ResponseEntity<UserDto> updateProfile(@RequestHeader("Authorization") String token, 
+                                               @Valid @RequestBody UserDto userDto) {
+        String jwtToken = token.replace("Bearer ", "");
+        User currentUser = authService.getCurrentUser(jwtToken);
         
-        User user = userService.createUser(userDto);
+        userDto.setId(currentUser.getId());
+        User updatedUser = userService.updateUser(userDto);
         
-        log.info("Registration successful for user: {}", user.getUsername());
-        return ResponseEntity.ok(UserDto.from(user));
+        return ResponseEntity.ok(UserDto.from(updatedUser));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@RequestHeader("Authorization") String token,
+                                             @RequestParam String oldPassword,
+                                             @RequestParam String newPassword) {
+        String jwtToken = token.replace("Bearer ", "");
+        User currentUser = authService.getCurrentUser(jwtToken);
+        
+        userService.changePassword(currentUser.getId(), oldPassword, newPassword);
+        
+        return ResponseEntity.ok().build();
     }
 }
