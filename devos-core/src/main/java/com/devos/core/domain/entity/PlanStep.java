@@ -73,6 +73,9 @@ public class PlanStep {
     @Column(name = "error_message")
     private String errorMessage;
 
+    @Column(name = "output", columnDefinition = "TEXT")
+    private String output;
+
     @Column(name = "retry_count")
     private Integer retryCount = 0;
 

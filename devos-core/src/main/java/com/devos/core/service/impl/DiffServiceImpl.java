@@ -28,9 +28,9 @@ public class DiffServiceImpl implements DiffService {
     private final ProjectRepository projectRepository;
 
     @Override
-    public Map<String, Object> generateDiff(Long projectId, String filePath, String content, String token) {
+    public Map<String, Object> generateDiff(Long projectId, String filePath, String content) {
         try {
-            User user = authService.getCurrentUser(token);
+            User user = authService.getCurrentUser();
             Project project = projectRepository.findById(projectId)
                     .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -69,9 +69,9 @@ public class DiffServiceImpl implements DiffService {
     }
 
     @Override
-    public Map<String, Object> compareFiles(Long projectId, String file1Path, String file2Path, String token) {
+    public Map<String, Object> compareFiles(Long projectId, String file1Path, String file2Path) {
         try {
-            User user = authService.getCurrentUser(token);
+            User user = authService.getCurrentUser();
             Project project = projectRepository.findById(projectId)
                     .orElseThrow(() -> new RuntimeException("Project not found"));
 

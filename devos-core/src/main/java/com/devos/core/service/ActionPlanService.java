@@ -7,27 +7,27 @@ import java.util.List;
 
 public interface ActionPlanService {
     
-    ActionPlan createActionPlan(ActionPlan actionPlan, String token);
+    ActionPlan createActionPlan(ActionPlan actionPlan);
     
-    ActionPlan getActionPlan(Long id, String token);
+    ActionPlan getActionPlan(Long id);
     
-    List<ActionPlan> getProjectActionPlans(Long projectId, String token);
+    List<ActionPlan> getProjectActionPlans(Long projectId);
     
-    ActionPlan updateActionPlan(Long id, ActionPlan actionPlan, String token);
+    ActionPlan updateActionPlan(Long id, ActionPlan actionPlan);
     
-    void deleteActionPlan(Long id, String token);
+    void deleteActionPlan(Long id);
     
-    ActionPlan approveActionPlan(Long id, String token);
+    ActionPlan approveActionPlan(Long id);
     
-    ActionPlan executeActionPlan(Long id, String token);
+    ActionPlan executeActionPlan(Long id);
     
-    ActionPlan rollbackActionPlan(Long id, String token);
+    ActionPlan rollbackActionPlan(Long id);
     
-    ActionPlan pauseActionPlan(Long id, String token);
+    ActionPlan pauseActionPlan(Long id);
     
-    ActionPlan resumeActionPlan(Long id, String token);
+    ActionPlan resumeActionPlan(Long id);
     
-    List<PlanStep> getPlanSteps(Long planId, String token);
+    List<PlanStep> getPlanSteps(Long planId);
     
-    PlanStep retryStep(Long planId, Long stepId, String token);
+    PlanStep retryStep(Long planId, Long stepId);
 }

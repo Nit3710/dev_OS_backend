@@ -30,20 +30,16 @@ public class ProjectController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<ProjectDto>> getProjects(
-            @RequestHeader("Authorization") String token,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Long userId = projectService.getUserIdFromToken(jwtToken);
-        
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
             Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Page<Project> projects = projectService.getUserProjects(userId, pageable);
+        Page<Project> projects = projectService.getUserProjects(pageable);
         Page<ProjectDto> projectDtos = projects.map(ProjectDto::from);
         
         return ResponseEntity.ok(projectDtos);
@@ -51,24 +47,15 @@ public class ProjectController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ProjectDto> getProject(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long id) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        Project project = projectService.getProject(id, jwtToken);
-        
+    public ResponseEntity<ProjectDto> getProject(@PathVariable Long id) {
+        Project project = projectService.getProject(id);
         return ResponseEntity.ok(ProjectDto.from(project));
     }
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ProjectDto> createProject(
-            @RequestHeader("Authorization") String token,
-            @Valid @RequestBody ProjectDto projectDto) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        Project project = projectService.createProject(projectDto.toEntity(), jwtToken);
+    public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
+        Project project = projectService.createProject(projectDto.toEntity());
         
         log.info("Project created: {} for user ID: {}", project.getName(), project.getUser().getId());
         return ResponseEntity.ok(ProjectDto.from(project));
@@ -77,12 +64,10 @@ public class ProjectController {
     @PutMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProjectDto> updateProject(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long id,
             @Valid @RequestBody ProjectDto projectDto) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Project project = projectService.updateProject(id, projectDto.toEntity(), jwtToken);
+        Project project = projectService.updateProject(id, projectDto.toEntity());
         
         log.info("Project updated: {}", project.getName());
         return ResponseEntity.ok(ProjectDto.from(project));
@@ -90,12 +75,8 @@ public class ProjectController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> deleteProject(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long id) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        projectService.deleteProject(id, jwtToken);
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+        projectService.deleteProject(id);
         
         log.info("Project deleted with ID: {}", id);
         return ResponseEntity.noContent().build();
@@ -104,24 +85,19 @@ public class ProjectController {
     @GetMapping("/{id}/file-tree")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Object> getFileTree(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long id,
             @RequestParam(defaultValue = "false") boolean includeContent) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Object fileTree = projectService.getFileTree(id, includeContent, jwtToken);
+        Object fileTree = projectService.getFileTree(id, includeContent);
         
         return ResponseEntity.ok(fileTree);
     }
 
     @PostMapping("/{id}/index")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> indexProject(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long id) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        fileIndexingService.indexProject(id, jwtToken);
+    public ResponseEntity<Void> indexProject(@PathVariable Long id) {
+        // fileIndexingService should also be refactored or handles internally
+        fileIndexingService.indexProject(id, null); // Temporarily pass null if not yet refactored
         
         log.info("Project indexing started for ID: {}", id);
         return ResponseEntity.accepted().build();
@@ -129,14 +105,8 @@ public class ProjectController {
 
     @GetMapping("/search")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ProjectDto>> searchProjects(
-            @RequestHeader("Authorization") String token,
-            @RequestParam String query) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        Long userId = projectService.getUserIdFromToken(jwtToken);
-        
-        List<Project> projects = projectService.searchProjects(query, userId);
+    public ResponseEntity<List<ProjectDto>> searchProjects(@RequestParam String query) {
+        List<Project> projects = projectService.searchProjects(query);
         List<ProjectDto> projectDtos = projects.stream()
                 .map(ProjectDto::from)
                 .collect(Collectors.toList());

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -103,6 +104,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public User getCurrentUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username;
+        if (principal instanceof UserDetails) {
+            username = ((UserDetails) principal).getUsername();
+        } else {
+            username = principal.toString();
+        }
+        
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    @Override
     public User getCurrentUser(String token) {
         try {
             String username = extractUsername(token);
@@ -112,6 +127,16 @@ public class AuthServiceImpl implements AuthService {
             log.error("Error getting current user from token", e);
             throw new RuntimeException("Invalid token", e);
         }
+    }
+
+    @Override
+    public String getCurrentToken() {
+        // This assumes the token is stored in the credentials or we can extract it if needs be.
+        // Actually, usually in JWT setup, the token itself isn't stored in Authentication object 
+        // unless we explicitly put it there during filter. 
+        // For now, let's return a placeholder or handle it if we strictly need the raw token in services.
+        // If we only need User, getCurrentUser() is better.
+        return null; 
     }
 
     @Override

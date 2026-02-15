@@ -22,10 +22,11 @@ import java.util.stream.Stream;
 public class FileServiceImpl implements FileService {
 
     private final ProjectRepository projectRepository;
+    private final com.devos.core.service.AuthService authService;
 
     @Override
     @Transactional(readOnly = true)
-    public String getFileContent(Long projectId, String filePath, String token) {
+    public String getFileContent(Long projectId, String filePath) {
         log.info("Getting file content for project: {}, file: {}", projectId, filePath);
         
         Path fullPath = validateAndResolvePath(projectId, filePath);
@@ -43,7 +44,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public void setFileContent(Long projectId, String filePath, String content, String token) {
+    public void setFileContent(Long projectId, String filePath, String content) {
         log.info("Setting file content for project: {}, file: {}", projectId, filePath);
         
         Path fullPath = validateAndResolvePath(projectId, filePath);
@@ -60,7 +61,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public Map<String, Object> uploadFile(Long projectId, MultipartFile file, String targetPath, String token) {
+    public Map<String, Object> uploadFile(Long projectId, MultipartFile file, String targetPath) {
         log.info("Uploading file to project: {}, path: {}, filename: {}", 
                 projectId, targetPath, file.getOriginalFilename());
         
@@ -88,7 +89,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public Map<String, Object> applyChanges(Long projectId, Map<String, Object> changes, String token) {
+    public Map<String, Object> applyChanges(Long projectId, Map<String, Object> changes) {
         // This is complex and depends on the structure of 'changes'. 
         // For now, let's assume it's handled by individual calls or refine later.
         throw new UnsupportedOperationException("Batch applyChanges not implemented yet");
@@ -96,7 +97,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public void deleteFile(Long projectId, String filePath, String token) {
+    public void deleteFile(Long projectId, String filePath) {
         log.info("Deleting file from project: {}, file: {}", projectId, filePath);
         
         Path fullPath = validateAndResolvePath(projectId, filePath);
@@ -120,10 +121,10 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public Map<String, Object> createFile(Long projectId, String filePath, String content, String token) {
+    public Map<String, Object> createFile(Long projectId, String filePath, String content) {
         log.info("Creating file in project: {}, path: {}", projectId, filePath);
         
-        setFileContent(projectId, filePath, content, token);
+        setFileContent(projectId, filePath, content);
         
         return Map.of(
                 "success", true,
@@ -135,7 +136,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public void moveFile(Long projectId, String sourcePath, String targetPath, String token) {
+    public void moveFile(Long projectId, String sourcePath, String targetPath) {
         log.info("Moving file in project: {}, from: {}, to: {}", projectId, sourcePath, targetPath);
         
         Path source = validateAndResolvePath(projectId, sourcePath);
@@ -152,7 +153,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Object searchInFiles(Long projectId, String query, String filePattern, Boolean caseSensitive, String token) {
+    public Object searchInFiles(Long projectId, String query, String filePattern, Boolean caseSensitive) {
         // Implementation requires file walking and regex matching
         // Leaving as placeholder for now as it doesn't block execution
         return Map.of("message", "Not implemented yet");
@@ -161,6 +162,11 @@ public class FileServiceImpl implements FileService {
     private Path validateAndResolvePath(Long projectId, String relativePath) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
+        
+        com.devos.core.domain.entity.User currentUser = authService.getCurrentUser();
+        if (!project.getUser().getId().equals(currentUser.getId())) {
+             throw new SecurityException("Access denied: You do not own this project");
+        }
         
         Path projectRoot = Paths.get(project.getLocalPath()).toAbsolutePath().normalize();
         Path resolvedPath = projectRoot.resolve(relativePath).normalize();

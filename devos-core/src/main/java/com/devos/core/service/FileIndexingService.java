@@ -4,13 +4,13 @@ import java.util.Map;
 
 public interface FileIndexingService {
     
-    void indexProject(Long projectId, String token);
+    void indexProject(Long projectId);
     
-    void indexProjectFiles(Long projectId, String token);
+    void indexProjectFiles(Long projectId);
     
-    Map<String, Object> searchInProject(Long projectId, String query, String token);
+    Map<String, Object> searchInProject(Long projectId, String query);
     
-    void updateIndex(Long projectId, String filePath, String content, String token);
+    void updateIndex(Long projectId, String filePath, String content);
     
-    void removeFromIndex(Long projectId, String filePath, String token);
+    void removeFromIndex(Long projectId, String filePath);
 }

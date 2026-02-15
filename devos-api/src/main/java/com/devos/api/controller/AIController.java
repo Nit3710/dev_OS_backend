@@ -30,11 +30,8 @@ public class AIController {
     @PostMapping("/chat/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<AIMessageDto> sendMessage(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @Valid @RequestBody ChatRequest chatRequest) {
-        
-        String jwtToken = token.replace("Bearer ", "");
         
         AIMessage response = aiChatService.sendMessage(
             projectId,
@@ -43,8 +40,7 @@ public class AIController {
             chatRequest.getLlmProviderId(),
             chatRequest.getContext(),
             chatRequest.getMaxTokens(),
-            chatRequest.getTemperature(),
-            jwtToken
+            chatRequest.getTemperature()
         );
         
         log.info("AI message sent for project: {}", projectId);
@@ -54,35 +50,28 @@ public class AIController {
     @GetMapping(value = "/chat/{projectId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public SseEmitter streamChat(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String message,
             @RequestParam(required = false) String threadId,
             @RequestParam(required = false) Long llmProviderId) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        
         return aiChatService.streamMessage(
             projectId,
             message,
             threadId,
-            llmProviderId,
-            jwtToken
+            llmProviderId
         );
     }
 
     @GetMapping("/messages/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Page<AIMessageDto>> getMessages(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        
         Pageable pageable = PageRequest.of(page, size);
-        Page<AIMessage> messages = aiChatService.getMessages(projectId, pageable, jwtToken);
+        Page<AIMessage> messages = aiChatService.getMessages(projectId, pageable);
         Page<AIMessageDto> messageDtos = messages.map(AIMessageDto::from);
         
         return ResponseEntity.ok(messageDtos);
@@ -91,13 +80,10 @@ public class AIController {
     @GetMapping("/messages/{projectId}/thread/{threadId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<List<AIMessageDto>> getThreadMessages(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @PathVariable String threadId) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        
-        List<AIMessage> messages = aiChatService.getThreadMessages(projectId, threadId, jwtToken);
+        List<AIMessage> messages = aiChatService.getThreadMessages(projectId, threadId);
         List<AIMessageDto> messageDtos = messages.stream()
                 .map(AIMessageDto::from)
                 .collect(Collectors.toList());
@@ -107,12 +93,8 @@ public class AIController {
 
     @DeleteMapping("/messages/{messageId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteMessage(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long messageId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        aiChatService.deleteMessage(messageId, jwtToken);
+    public ResponseEntity<Void> deleteMessage(@PathVariable Long messageId) {
+        aiChatService.deleteMessage(messageId);
         
         log.info("AI message deleted: {}", messageId);
         return ResponseEntity.noContent().build();
@@ -120,12 +102,8 @@ public class AIController {
 
     @GetMapping("/usage/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Object> getUsageStats(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long projectId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        Object usageStats = aiChatService.getUsageStats(projectId, jwtToken);
+    public ResponseEntity<Object> getUsageStats(@PathVariable Long projectId) {
+        Object usageStats = aiChatService.getUsageStats(projectId);
         
         return ResponseEntity.ok(usageStats);
     }
@@ -133,12 +111,10 @@ public class AIController {
     @PostMapping("/clear/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> clearChat(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam(required = false) String threadId) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        aiChatService.clearChat(projectId, threadId, jwtToken);
+        aiChatService.clearChat(projectId, threadId);
         
         log.info("Chat cleared for project: {}", projectId);
         return ResponseEntity.ok().build();

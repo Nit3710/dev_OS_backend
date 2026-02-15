@@ -11,17 +11,17 @@ import java.util.Map;
 public interface AIChatService {
 
     AIMessage sendMessage(Long projectId, String content, String threadId, Long llmProviderId, 
-                        Map<String, Object> context, Integer maxTokens, Double temperature, String token);
+                        Map<String, Object> context, Integer maxTokens, Double temperature);
 
-    SseEmitter streamMessage(Long projectId, String message, String threadId, Long llmProviderId, String token);
+    SseEmitter streamMessage(Long projectId, String message, String threadId, Long llmProviderId);
 
-    Page<AIMessage> getMessages(Long projectId, Pageable pageable, String token);
+    Page<AIMessage> getMessages(Long projectId, Pageable pageable);
 
-    List<AIMessage> getThreadMessages(Long projectId, String threadId, String token);
+    List<AIMessage> getThreadMessages(Long projectId, String threadId);
 
-    void deleteMessage(Long messageId, String token);
+    void deleteMessage(Long messageId);
 
-    Object getUsageStats(Long projectId, String token);
+    Object getUsageStats(Long projectId);
 
-    void clearChat(Long projectId, String threadId, String token);
+    void clearChat(Long projectId, String threadId);
 }

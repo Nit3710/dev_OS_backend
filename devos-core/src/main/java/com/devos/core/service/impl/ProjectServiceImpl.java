@@ -19,11 +19,11 @@ import java.util.Optional;
 public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final com.devos.core.service.AuthService authService;
 
     @Override
-    public Object getFileTree(Long id, boolean includeContent, String token) {
-        Project project = getProjectById(id).orElseThrow(() -> 
-            new RuntimeException("Project not found with id: " + id));
+    public Object getFileTree(Long id, boolean includeContent) {
+        Project project = getProjectWithOwnership(id);
         // This would typically return a file tree structure
         // For now, return a simple response
         return java.util.Map.of(
@@ -35,20 +35,21 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public Project createProject(Project project, String token) {
+    public Project createProject(Project project) {
+        com.devos.core.domain.entity.User currentUser = authService.getCurrentUser();
+        project.setUser(currentUser);
         project.setCreatedAt(java.time.LocalDateTime.now());
         project.setUpdatedAt(java.time.LocalDateTime.now());
         
         Project savedProject = projectRepository.save(project);
-        log.info("Created project: {}", savedProject.getName());
+        log.info("Created project: {} for user: {}", savedProject.getName(), currentUser.getUsername());
         
         return savedProject;
     }
 
     @Override
-    public Project getProject(Long id, String token) {
-        return getProjectById(id).orElseThrow(() -> 
-            new RuntimeException("Project not found with id: " + id));
+    public Project getProject(Long id) {
+        return getProjectWithOwnership(id);
     }
 
     @Override
@@ -57,16 +58,16 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Page<Project> getUserProjects(Long userId, Pageable pageable) {
-        List<Project> projects = projectRepository.findByUserId(userId);
+    public Page<Project> getUserProjects(Pageable pageable) {
+        com.devos.core.domain.entity.User currentUser = authService.getCurrentUser();
+        List<Project> projects = projectRepository.findByUserId(currentUser.getId());
         return new org.springframework.data.domain.PageImpl<>(projects, pageable, projects.size());
     }
 
     @Override
     @Transactional
-    public Project updateProject(Long id, Project project, String token) {
-        Project existingProject = getProjectById(id).orElseThrow(() -> 
-            new RuntimeException("Project not found with id: " + id));
+    public Project updateProject(Long id, Project project) {
+        Project existingProject = getProjectWithOwnership(id);
         
         existingProject.setName(project.getName());
         existingProject.setDescription(project.getDescription());
@@ -80,22 +81,26 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public void deleteProject(Long id, String token) {
-        Project project = getProjectById(id).orElseThrow(() -> 
-            new RuntimeException("Project not found with id: " + id));
+    public void deleteProject(Long id) {
+        Project project = getProjectWithOwnership(id);
         projectRepository.delete(project);
         log.info("Deleted project: {}", project.getName());
     }
 
     @Override
-    public Long getUserIdFromToken(String token) {
-        // This would typically decode JWT token and extract user ID
-        // For now, return a placeholder implementation
-        return 1L; // Placeholder
+    public List<Project> searchProjects(String query) {
+        com.devos.core.domain.entity.User currentUser = authService.getCurrentUser();
+        return projectRepository.searchProjects(query, currentUser.getId());
     }
 
-    @Override
-    public List<Project> searchProjects(String query, Long userId) {
-        return projectRepository.searchProjects(query, userId);
+    private Project getProjectWithOwnership(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+        
+        com.devos.core.domain.entity.User currentUser = authService.getCurrentUser();
+        if (!project.getUser().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied: You do not own this project");
+        }
+        return project;
     }
 }

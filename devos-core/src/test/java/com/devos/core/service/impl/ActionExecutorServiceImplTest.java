@@ -42,6 +42,8 @@ class ActionExecutorServiceImplTest {
     private GitService gitService;
     @Mock
     private FileChangeRepository fileChangeRepository;
+    @Mock
+    private com.devos.core.service.AuthService authService;
 
     @InjectMocks
     private ActionExecutorServiceImpl actionExecutorService;
@@ -53,10 +55,16 @@ class ActionExecutorServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        com.devos.core.domain.entity.User user = com.devos.core.domain.entity.User.builder()
+                .id(1L)
+                .email("test@example.com")
+                .build();
+
         project = Project.builder()
                 .id(1L)
                 .name("Test Project")
                 .localPath("/tmp/test-project")
+                .user(user)
                 .build();
 
         actionPlan = ActionPlan.builder()
@@ -82,35 +90,37 @@ class ActionExecutorServiceImplTest {
 
     @Test
     void executePlan_Success() {
+        when(authService.getCurrentUser()).thenReturn(project.getUser());
         when(actionPlanRepository.findById(1L)).thenReturn(Optional.of(actionPlan));
         when(planStepRepository.findByActionPlanId(1L)).thenReturn(Collections.singletonList(planStep));
         when(planStepRepository.findById(1L)).thenReturn(Optional.of(planStep));
         when(actionPlanRepository.save(any(ActionPlan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ActionPlan result = actionExecutorService.executePlan(1L, TEST_TOKEN);
+        ActionPlan result = actionExecutorService.executePlan(1L);
 
         assertNotNull(result);
         assertEquals(ActionPlan.PlanStatus.COMPLETED, result.getStatus());
         verify(planStepRepository, atLeastOnce()).save(any(PlanStep.class));
-        verify(fileService).createFile(eq(1L), eq("src/Main.java"), eq("public class Main {}"), eq(TEST_TOKEN));
+        verify(fileService).createFile(eq(1L), eq("src/Main.java"), eq("public class Main {}"));
         verify(fileChangeRepository).save(any());
     }
 
     @Test
     void executePlan_InvalidStatus() {
         actionPlan.setStatus(ActionPlan.PlanStatus.DRAFT);
+        when(authService.getCurrentUser()).thenReturn(project.getUser());
         when(actionPlanRepository.findById(1L)).thenReturn(Optional.of(actionPlan));
 
-        assertThrows(IllegalStateException.class, () -> actionExecutorService.executePlan(1L, TEST_TOKEN));
+        assertThrows(IllegalStateException.class, () -> actionExecutorService.executePlan(1L));
     }
 
     @Test
     void executeStep_CreateFile() {
         when(planStepRepository.findById(1L)).thenReturn(Optional.of(planStep));
 
-        actionExecutorService.executeStep(1L, TEST_TOKEN);
+        actionExecutorService.executeStep(1L);
 
-        verify(fileService).createFile(eq(1L), eq("src/Main.java"), eq("public class Main {}"), eq(TEST_TOKEN));
+        verify(fileService).createFile(eq(1L), eq("src/Main.java"), eq("public class Main {}"));
         verify(fileChangeRepository).save(any());
     }
 }

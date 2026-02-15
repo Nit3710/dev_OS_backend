@@ -30,26 +30,21 @@ public class FileController {
     @GetMapping("/{projectId}/content")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<String> getFileContent(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String filePath) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        String content = fileService.getFileContent(projectId, filePath, jwtToken);
-        
+        String content = fileService.getFileContent(projectId, filePath);
         return ResponseEntity.ok(content);
     }
 
     @PostMapping("/{projectId}/content")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> setFileContent(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String filePath,
             @RequestBody String content) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        fileService.setFileContent(projectId, filePath, content, jwtToken);
+        fileService.setFileContent(projectId, filePath, content);
         
         log.info("File content updated: {} for project: {}", filePath, projectId);
         return ResponseEntity.ok().build();
@@ -58,13 +53,11 @@ public class FileController {
     @PostMapping("/{projectId}/upload")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> uploadFile(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String targetPath) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Map<String, Object> result = fileService.uploadFile(projectId, file, targetPath, jwtToken);
+        Map<String, Object> result = fileService.uploadFile(projectId, file, targetPath);
         
         log.info("File uploaded: {} for project: {}", file.getOriginalFilename(), projectId);
         return ResponseEntity.ok(result);
@@ -73,13 +66,11 @@ public class FileController {
     @PostMapping("/{projectId}/diff")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Object> generateDiff(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String filePath,
             @RequestBody(required = false) String newContent) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Object diff = diffService.generateDiff(projectId, filePath, newContent, jwtToken);
+        Object diff = diffService.generateDiff(projectId, filePath, newContent, null); // DiffService might need refactor too but using null for now
         
         return ResponseEntity.ok(diff);
     }
@@ -87,13 +78,11 @@ public class FileController {
     @PostMapping("/{projectId}/diff/compare")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Object> compareFiles(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String filePath1,
             @RequestParam String filePath2) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Object diff = diffService.compareFiles(projectId, filePath1, filePath2, jwtToken);
+        Object diff = diffService.compareFiles(projectId, filePath1, filePath2, null);
         
         return ResponseEntity.ok(diff);
     }
@@ -101,12 +90,10 @@ public class FileController {
     @PutMapping("/{projectId}/apply")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> applyChanges(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestBody Map<String, Object> changes) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Map<String, Object> result = fileService.applyChanges(projectId, changes, jwtToken);
+        Map<String, Object> result = fileService.applyChanges(projectId, changes);
         
         log.info("Changes applied for project: {}", projectId);
         return ResponseEntity.ok(result);
@@ -115,12 +102,10 @@ public class FileController {
     @DeleteMapping("/{projectId}/file")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteFile(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String filePath) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        fileService.deleteFile(projectId, filePath, jwtToken);
+        fileService.deleteFile(projectId, filePath);
         
         log.info("File deleted: {} for project: {}", filePath, projectId);
         return ResponseEntity.noContent().build();
@@ -129,13 +114,11 @@ public class FileController {
     @PostMapping("/{projectId}/create")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> createFile(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String filePath,
             @RequestBody(required = false) String content) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Map<String, Object> result = fileService.createFile(projectId, filePath, content, jwtToken);
+        Map<String, Object> result = fileService.createFile(projectId, filePath, content);
         
         log.info("File created: {} for project: {}", filePath, projectId);
         return ResponseEntity.ok(result);
@@ -144,13 +127,11 @@ public class FileController {
     @PostMapping("/{projectId}/move")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> moveFile(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String sourcePath,
             @RequestParam String targetPath) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        fileService.moveFile(projectId, sourcePath, targetPath, jwtToken);
+        fileService.moveFile(projectId, sourcePath, targetPath);
         
         log.info("File moved from {} to {} for project: {}", sourcePath, targetPath, projectId);
         return ResponseEntity.ok().build();
@@ -159,14 +140,12 @@ public class FileController {
     @GetMapping("/{projectId}/search")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Object> searchInFiles(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long projectId,
             @RequestParam String query,
             @RequestParam(required = false) String filePattern,
             @RequestParam(required = false) Boolean caseSensitive) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        Object results = fileService.searchInFiles(projectId, query, filePattern, caseSensitive, jwtToken);
+        Object results = fileService.searchInFiles(projectId, query, filePattern, caseSensitive);
         
         return ResponseEntity.ok(results);
     }

@@ -38,9 +38,9 @@ public class AIChatServiceImpl implements AIChatService {
 
     @Override
     public AIMessage sendMessage(Long projectId, String content, String threadId, Long llmProviderId,
-                                Map<String, Object> context, Integer maxTokens, Double temperature, String token) {
+                                Map<String, Object> context, Integer maxTokens, Double temperature) {
         
-        User user = authService.getCurrentUser(token);
+        User user = authService.getCurrentUser();
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -118,8 +118,8 @@ public class AIChatServiceImpl implements AIChatService {
     }
 
     @Override
-    public SseEmitter streamMessage(Long projectId, String message, String threadId, Long llmProviderId, String token) {
-        User user = authService.getCurrentUser(token);
+    public SseEmitter streamMessage(Long projectId, String message, String threadId, Long llmProviderId) {
+        User user = authService.getCurrentUser();
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -213,8 +213,8 @@ public class AIChatServiceImpl implements AIChatService {
     }
 
     @Override
-    public Page<AIMessage> getMessages(Long projectId, Pageable pageable, String token) {
-        User user = authService.getCurrentUser(token);
+    public Page<AIMessage> getMessages(Long projectId, Pageable pageable) {
+        User user = authService.getCurrentUser();
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -227,8 +227,8 @@ public class AIChatServiceImpl implements AIChatService {
     }
 
     @Override
-    public List<AIMessage> getThreadMessages(Long projectId, String threadId, String token) {
-        User user = authService.getCurrentUser(token);
+    public List<AIMessage> getThreadMessages(Long projectId, String threadId) {
+        User user = authService.getCurrentUser();
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -241,8 +241,8 @@ public class AIChatServiceImpl implements AIChatService {
     }
 
     @Override
-    public void deleteMessage(Long messageId, String token) {
-        User user = authService.getCurrentUser(token);
+    public void deleteMessage(Long messageId) {
+        User user = authService.getCurrentUser();
         AIMessage message = aiMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 
@@ -255,8 +255,8 @@ public class AIChatServiceImpl implements AIChatService {
     }
 
     @Override
-    public Object getUsageStats(Long projectId, String token) {
-        User user = authService.getCurrentUser(token);
+    public Object getUsageStats(Long projectId) {
+        User user = authService.getCurrentUser();
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -275,8 +275,8 @@ public class AIChatServiceImpl implements AIChatService {
     }
 
     @Override
-    public void clearChat(Long projectId, String threadId, String token) {
-        User user = authService.getCurrentUser(token);
+    public void clearChat(Long projectId, String threadId) {
+        User user = authService.getCurrentUser();
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 

@@ -14,7 +14,11 @@ public interface AuthService {
 
     void logout(String token);
 
+    User getCurrentUser();
+
     User getCurrentUser(String token);
+
+    String getCurrentToken();
 
     String extractUsername(String token);
 

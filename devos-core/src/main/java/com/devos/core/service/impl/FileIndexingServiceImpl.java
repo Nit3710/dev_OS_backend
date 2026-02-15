@@ -15,7 +15,7 @@ public class FileIndexingServiceImpl implements FileIndexingService {
 
     @Override
     @Transactional
-    public void indexProject(Long projectId, String token) {
+    public void indexProject(Long projectId) {
         log.info("Starting indexing for project: {}", projectId);
         
         // This would typically:
@@ -30,7 +30,7 @@ public class FileIndexingServiceImpl implements FileIndexingService {
 
     @Override
     @Transactional
-    public void indexProjectFiles(Long projectId, String token) {
+    public void indexProjectFiles(Long projectId) {
         log.info("Starting file indexing for project: {}", projectId);
         
         // This would typically:
@@ -44,7 +44,7 @@ public class FileIndexingServiceImpl implements FileIndexingService {
     }
 
     @Override
-    public Map<String, Object> searchInProject(Long projectId, String query, String token) {
+    public Map<String, Object> searchInProject(Long projectId, String query) {
         log.info("Searching in project: {} with query: {}", projectId, query);
         
         // This would typically:
@@ -64,7 +64,7 @@ public class FileIndexingServiceImpl implements FileIndexingService {
 
     @Override
     @Transactional
-    public void updateIndex(Long projectId, String filePath, String content, String token) {
+    public void updateIndex(Long projectId, String filePath, String content) {
         log.info("Updating index for project: {}, file: {}", projectId, filePath);
         
         // This would typically:
@@ -78,7 +78,7 @@ public class FileIndexingServiceImpl implements FileIndexingService {
 
     @Override
     @Transactional
-    public void removeFromIndex(Long projectId, String filePath, String token) {
+    public void removeFromIndex(Long projectId, String filePath) {
         log.info("Removing from index for project: {}, file: {}", projectId, filePath);
         
         // This would typically:

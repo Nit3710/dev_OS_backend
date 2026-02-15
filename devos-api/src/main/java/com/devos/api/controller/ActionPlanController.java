@@ -25,24 +25,15 @@ public class ActionPlanController {
 
     @GetMapping("/{planId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> getActionPlan(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        ActionPlan actionPlan = actionPlanService.getActionPlan(planId, jwtToken);
-        
+    public ResponseEntity<ActionPlanDto> getActionPlan(@PathVariable Long planId) {
+        ActionPlan actionPlan = actionPlanService.getActionPlan(planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
     @GetMapping("/project/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<List<ActionPlanDto>> getProjectPlans(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long projectId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        List<ActionPlan> plans = actionPlanService.getProjectActionPlans(projectId, jwtToken);
+    public ResponseEntity<List<ActionPlanDto>> getProjectPlans(@PathVariable Long projectId) {
+        List<ActionPlan> plans = actionPlanService.getProjectActionPlans(projectId);
         List<ActionPlanDto> planDtos = plans.stream()
                 .map(ActionPlanDto::from)
                 .collect(Collectors.toList());
@@ -52,78 +43,59 @@ public class ActionPlanController {
 
     @PostMapping("/{planId}/approve")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> approveActionPlan(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        ActionPlan actionPlan = actionPlanService.approveActionPlan(planId, jwtToken);
-        
+    public ResponseEntity<ActionPlanDto> approveActionPlan(@PathVariable Long planId) {
+        ActionPlan actionPlan = actionPlanService.approveActionPlan(planId);
         log.info("Action plan approved: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
     @PostMapping("/{planId}/apply")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> executeActionPlan(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        // Delegate to executor service which handles the actual logic + status updates
-        ActionPlan actionPlan = actionExecutorService.executePlan(planId, jwtToken);
-        
+    public ResponseEntity<ActionPlanDto> executeActionPlan(@PathVariable Long planId) {
+        ActionPlan actionPlan = actionExecutorService.executePlan(planId);
         log.info("Action plan execution completed: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
+    @PostMapping("/{planId}/steps/{stepId}/execute")
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    public ResponseEntity<Void> executeStep(
+            @PathVariable Long planId,
+            @PathVariable Long stepId) {
+        
+        actionExecutorService.executeStep(stepId);
+        log.info("Step execution completed: {}", stepId);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{planId}/rollback")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> rollbackActionPlan(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        ActionPlan actionPlan = actionPlanService.rollbackActionPlan(planId, jwtToken);
-        
+    public ResponseEntity<ActionPlanDto> rollbackActionPlan(@PathVariable Long planId) {
+        ActionPlan actionPlan = actionPlanService.rollbackActionPlan(planId);
         log.info("Action plan rollback started: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
     @PostMapping("/{planId}/pause")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> pauseActionPlan(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        ActionPlan actionPlan = actionPlanService.pauseActionPlan(planId, jwtToken);
-        
+    public ResponseEntity<ActionPlanDto> pauseActionPlan(@PathVariable Long planId) {
+        ActionPlan actionPlan = actionPlanService.pauseActionPlan(planId);
         log.info("Action plan paused: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
     @PostMapping("/{planId}/resume")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> resumeActionPlan(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        ActionPlan actionPlan = actionPlanService.resumeActionPlan(planId, jwtToken);
-        
+    public ResponseEntity<ActionPlanDto> resumeActionPlan(@PathVariable Long planId) {
+        ActionPlan actionPlan = actionPlanService.resumeActionPlan(planId);
         log.info("Action plan resumed: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
     @GetMapping("/{planId}/steps")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<List<PlanStepDto>> getPlanSteps(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        var steps = actionPlanService.getPlanSteps(planId, jwtToken);
+    public ResponseEntity<List<PlanStepDto>> getPlanSteps(@PathVariable Long planId) {
+        var steps = actionPlanService.getPlanSteps(planId);
         List<PlanStepDto> stepDtos = steps.stream()
                 .map(PlanStepDto::from)
                 .collect(Collectors.toList());
@@ -134,27 +106,20 @@ public class ActionPlanController {
     @PostMapping("/{planId}/steps/{stepId}/retry")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<PlanStepDto> retryStep(
-            @RequestHeader("Authorization") String token,
             @PathVariable Long planId,
             @PathVariable Long stepId) {
         
-        String jwtToken = token.replace("Bearer ", "");
-        var step = actionPlanService.retryStep(planId, stepId, jwtToken);
-        
+        var step = actionPlanService.retryStep(planId, stepId);
         log.info("Step retry initiated: {} for plan: {}", stepId, planId);
         return ResponseEntity.ok(PlanStepDto.from(step));
     }
 
     @DeleteMapping("/{planId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteActionPlan(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long planId) {
-        
-        String jwtToken = token.replace("Bearer ", "");
-        actionPlanService.deleteActionPlan(planId, jwtToken);
-        
+    public ResponseEntity<Void> deleteActionPlan(@PathVariable Long planId) {
+        actionPlanService.deleteActionPlan(planId);
         log.info("Action plan deleted: {}", planId);
         return ResponseEntity.noContent().build();
     }
+}
 }

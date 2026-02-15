@@ -23,20 +23,25 @@ import java.util.Map;
 @Slf4j
 public class ActionExecutorServiceImpl implements ActionExecutorService {
 
-    private final ActionPlanRepository actionPlanRepository;
-    private final PlanStepRepository planStepRepository;
     private final ProjectRepository projectRepository;
     private final FileService fileService;
     private final GitService gitService;
     private final com.devos.core.repository.FileChangeRepository fileChangeRepository;
+    private final com.devos.core.service.AuthService authService;
 
     @Override
     @Transactional
-    public ActionPlan executePlan(Long actionPlanId, String token) {
+    public ActionPlan executePlan(Long actionPlanId) {
         log.info("Starting execution of action plan: {}", actionPlanId);
         
         ActionPlan actionPlan = actionPlanRepository.findById(actionPlanId)
                 .orElseThrow(() -> new RuntimeException("Action plan not found: " + actionPlanId));
+        
+        // Security check
+        com.devos.core.domain.entity.User currentUser = authService.getCurrentUser();
+        if (!actionPlan.getProject().getUser().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied: You do not own the project associated with this plan");
+        }
 
         if (actionPlan.getStatus() != ActionPlan.PlanStatus.APPROVED && 
             actionPlan.getStatus() != ActionPlan.PlanStatus.IN_PROGRESS) {
@@ -53,7 +58,7 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
             for (PlanStep step : steps) {
                 if (step.getStatus() == PlanStep.StepStatus.PENDING || 
                     step.getStatus() == PlanStep.StepStatus.FAILED) {
-                    executeStep(step.getId(), token);
+                    executeStep(step.getId());
                 }
             }
             
@@ -72,7 +77,7 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
 
     @Override
     @Transactional
-    public void executeStep(Long stepId, String token) {
+    public void executeStep(Long stepId) {
         PlanStep step = planStepRepository.findById(stepId)
                 .orElseThrow(() -> new RuntimeException("Step not found: " + stepId));
         
@@ -89,19 +94,19 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
             
             switch (step.getType()) {
                 case CREATE_FILE:
-                    handleCreateFile(projectId, step, token);
+                    handleCreateFile(projectId, step);
                     break;
                 case UPDATE_FILE:
-                    handleUpdateFile(projectId, step, token);
+                    handleUpdateFile(projectId, step);
                     break;
                 case DELETE_FILE:
-                    handleDeleteFile(projectId, step, token);
+                    handleDeleteFile(projectId, step);
                     break;
                 case GIT_OPERATION:
                     handleGitOperation(projectPath, step.getParameters());
                     break;
                 case RUN_COMMAND:
-                    log.warn("RUN_COMMAND step type not yet fully implemented for safety reasons: {}", step.getId());
+                    handleRunCommand(projectPath, step);
                     break;
                 default:
                     log.warn("Unknown step type: {}", step.getType());
@@ -122,7 +127,7 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
         }
     }
 
-    private void handleCreateFile(Long projectId, PlanStep step, String token) {
+    private void handleCreateFile(Long projectId, PlanStep step) {
         Map<String, Object> params = step.getParameters();
         String path = (String) params.get("path");
         String content = (String) params.get("content");
@@ -131,12 +136,12 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
             throw new IllegalArgumentException("Create file requires 'path' and 'content' parameters");
         }
         
-        fileService.createFile(projectId, path, content, token);
+        fileService.createFile(projectId, path, content);
         
         saveFileChange(step, path, com.devos.core.domain.entity.FileChange.ChangeType.CREATE, null, content);
     }
 
-    private void handleUpdateFile(Long projectId, PlanStep step, String token) {
+    private void handleUpdateFile(Long projectId, PlanStep step) {
         Map<String, Object> params = step.getParameters();
         String path = (String) params.get("path");
         String content = (String) params.get("content");
@@ -147,17 +152,17 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
         
         String oldContent = "";
         try {
-            oldContent = fileService.getFileContent(projectId, path, token);
+            oldContent = fileService.getFileContent(projectId, path);
         } catch (Exception ignored) {
             // File might not exist or other error, treat old content as empty
         }
         
-        fileService.setFileContent(projectId, path, content, token);
+        fileService.setFileContent(projectId, path, content);
         
         saveFileChange(step, path, com.devos.core.domain.entity.FileChange.ChangeType.UPDATE, oldContent, content);
     }
 
-    private void handleDeleteFile(Long projectId, PlanStep step, String token) {
+    private void handleDeleteFile(Long projectId, PlanStep step) {
         Map<String, Object> params = step.getParameters();
         String path = (String) params.get("path");
         
@@ -167,12 +172,64 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
         
         String oldContent = "";
         try {
-            oldContent = fileService.getFileContent(projectId, path, token);
+            oldContent = fileService.getFileContent(projectId, path);
         } catch (Exception ignored) {}
 
-        fileService.deleteFile(projectId, path, token);
+        fileService.deleteFile(projectId, path);
         
         saveFileChange(step, path, com.devos.core.domain.entity.FileChange.ChangeType.DELETE, oldContent, null);
+    }
+
+    private void handleRunCommand(String projectPath, PlanStep step) {
+        Map<String, Object> params = step.getParameters();
+        String command = (String) params.get("command");
+        
+        if (command == null || command.isEmpty()) {
+            throw new IllegalArgumentException("Run command requires 'command' parameter");
+        }
+
+        log.info("Running command in {}: {}", projectPath, command);
+        
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            // This is a basic shell executor. In a real production environment, 
+            // you must use a sandbox like Docker or a MicroVM.
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                processBuilder.command("cmd.exe", "/c", command);
+            } else {
+                processBuilder.command("sh", "-c", command);
+            }
+            
+            processBuilder.directory(new java.io.File(projectPath));
+            processBuilder.redirectErrorStream(true); // Merge stderr into stdout
+            
+            Process process = processBuilder.start();
+            
+            StringBuilder output = new StringBuilder();
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                    if (output.length() > 50000) { // Safety limit for output size
+                        output.append("... [Output Truncated] ...");
+                        break;
+                    }
+                }
+            }
+            
+            int exitCode = process.waitFor();
+            step.setOutput(output.toString());
+            
+            if (exitCode != 0) {
+                step.setErrorMessage("Command failed with exit code: " + exitCode);
+                // We might set status to FAILED here, but executeStep handles the exception
+                throw new RuntimeException("Command failed: " + command + " (Exit code: " + exitCode + ")");
+            }
+            
+        } catch (Exception e) {
+            log.error("Error executing command", e);
+            throw new RuntimeException("Command execution failed: " + e.getMessage(), e);
+        }
     }
 
     private void saveFileChange(PlanStep step, String path, com.devos.core.domain.entity.FileChange.ChangeType type, String oldContent, String newContent) {

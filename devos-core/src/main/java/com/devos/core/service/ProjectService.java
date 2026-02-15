@@ -9,21 +9,19 @@ import java.util.Optional;
 
 public interface ProjectService {
     
-    Object getFileTree(Long id, boolean includeContent, String token);
+    Object getFileTree(Long id, boolean includeContent);
     
-    Project createProject(Project project, String token);
+    Project createProject(Project project);
     
-    Project getProject(Long id, String token);
+    Project getProject(Long id);
     
     Optional<Project> getProjectById(Long id);
     
-    Page<Project> getUserProjects(Long userId, Pageable pageable);
+    Page<Project> getUserProjects(Pageable pageable);
     
-    Project updateProject(Long id, Project project, String token);
+    Project updateProject(Long id, Project project);
     
-    void deleteProject(Long id, String token);
+    void deleteProject(Long id);
     
-    Long getUserIdFromToken(String token);
-    
-    List<Project> searchProjects(String query, Long userId);
+    List<Project> searchProjects(String query);
 }
