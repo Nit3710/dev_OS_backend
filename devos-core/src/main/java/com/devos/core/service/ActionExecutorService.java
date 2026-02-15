@@ -12,8 +12,5 @@ public interface ActionExecutorService {
      */
     ActionPlan executePlan(Long actionPlanId);
     
-    /**
-     * Executes a specific step of an action plan.
-     * 
-     * @param stepId The ID of the step to execute
+    void executeStep(Long stepId);
 }

@@ -1,6 +1,6 @@
 package com.devos.file.service.impl;
 
-import com.devos.file.service.GitService;
+import com.devos.core.service.GitService;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;

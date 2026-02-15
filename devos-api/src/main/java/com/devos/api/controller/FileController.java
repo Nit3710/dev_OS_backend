@@ -21,7 +21,7 @@ public class FileController {
     private final DiffService diffService;
 
     public FileController(
-            FileService fileService,
+            @Qualifier("coreFileServiceImpl") FileService fileService,
             @Qualifier("coreDiffServiceImpl") DiffService diffService) {
         this.fileService = fileService;
         this.diffService = diffService;
@@ -70,7 +70,7 @@ public class FileController {
             @RequestParam String filePath,
             @RequestBody(required = false) String newContent) {
         
-        Object diff = diffService.generateDiff(projectId, filePath, newContent, null); // DiffService might need refactor too but using null for now
+        Object diff = diffService.generateDiff(projectId, filePath, newContent);
         
         return ResponseEntity.ok(diff);
     }
@@ -82,7 +82,7 @@ public class FileController {
             @RequestParam String filePath1,
             @RequestParam String filePath2) {
         
-        Object diff = diffService.compareFiles(projectId, filePath1, filePath2, null);
+        Object diff = diffService.compareFiles(projectId, filePath1, filePath2);
         
         return ResponseEntity.ok(diff);
     }

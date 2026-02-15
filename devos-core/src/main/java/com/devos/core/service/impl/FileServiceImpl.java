@@ -20,16 +20,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
+@Service("coreFileServiceImpl")
 @RequiredArgsConstructor
 @Slf4j
 public class FileServiceImpl implements FileService {
 
     private final FileNodeRepository fileNodeRepository;
     private final FileOperationRepository fileOperationRepository;
+    private final com.devos.core.service.AuthService authService;
 
     @Override
-    public Map<String, Object> getProjectFiles(Long projectId, String token) {
+    public Map<String, Object> getProjectFiles(Long projectId) {
         List<FileNode> files = fileNodeRepository.findByProjectId(projectId);
         
         Map<String, Object> result = new HashMap<>();
@@ -41,7 +42,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public String getFileContent(Long projectId, String filePath, String token) {
+    public String getFileContent(Long projectId, String filePath) {
         FileNode fileNode = fileNodeRepository.findByProjectIdAndRelativePath(projectId, filePath)
                 .orElseThrow(() -> new RuntimeException("File not found: " + filePath));
         
@@ -55,7 +56,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public void setFileContent(Long projectId, String filePath, String content, String token) {
+    public void setFileContent(Long projectId, String filePath, String content) {
         FileNode fileNode = fileNodeRepository.findByProjectIdAndRelativePath(projectId, filePath)
                 .orElseThrow(() -> new RuntimeException("File not found: " + filePath));
         
@@ -73,7 +74,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public Map<String, Object> uploadFile(Long projectId, MultipartFile file, String targetPath, String token) {
+    public Map<String, Object> uploadFile(Long projectId, MultipartFile file, String targetPath) {
         try {
             String originalFilename = file.getOriginalFilename();
             Path destinationPath = Paths.get(targetPath, originalFilename);
@@ -121,7 +122,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public Map<String, Object> updateFile(Long projectId, String filePath, String content, String token) {
+    public Map<String, Object> updateFile(Long projectId, String filePath, String content) {
         FileNode fileNode = fileNodeRepository.findByProjectIdAndRelativePath(projectId, filePath)
                 .orElseThrow(() -> new RuntimeException("File not found: " + filePath));
         
@@ -158,7 +159,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public Map<String, Object> applyChanges(Long projectId, Map<String, Object> changes, String token) {
+    public Map<String, Object> applyChanges(Long projectId, Map<String, Object> changes) {
         // This would typically apply multiple file operations
         // For now, return a success response
         Map<String, Object> result = new HashMap<>();
@@ -172,7 +173,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public Map<String, Object> createFile(Long projectId, String filePath, String content, String token) {
+    public Map<String, Object> createFile(Long projectId, String filePath, String content) {
         try {
             Path fullPath = Paths.get(filePath);
             Files.createDirectories(fullPath.getParent());
@@ -218,7 +219,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public void deleteFile(Long projectId, String filePath, String token) {
+    public void deleteFile(Long projectId, String filePath) {
         FileNode fileNode = fileNodeRepository.findByProjectIdAndRelativePath(projectId, filePath)
                 .orElseThrow(() -> new RuntimeException("File not found: " + filePath));
         
@@ -247,7 +248,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public void moveFile(Long projectId, String sourcePath, String targetPath, String token) {
+    public void moveFile(Long projectId, String sourcePath, String targetPath) {
         try {
             Path source = Paths.get(sourcePath);
             Path target = Paths.get(targetPath);
@@ -284,7 +285,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Object searchInFiles(Long projectId, String query, String filePattern, Boolean caseSensitive, String token) {
+    public Object searchInFiles(Long projectId, String query, String filePattern, Boolean caseSensitive) {
         List<FileNode> files = fileNodeRepository.findByProjectIdOrderByRelativePathAsc(projectId);
         
         // Simple search implementation

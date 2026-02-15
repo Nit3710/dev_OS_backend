@@ -2,7 +2,7 @@ package com.devos.file.service.impl;
 
 import com.devos.core.domain.entity.Project;
 import com.devos.core.repository.ProjectRepository;
-import com.devos.file.service.FileService;
+import com.devos.core.service.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +23,14 @@ public class FileServiceImpl implements FileService {
 
     private final ProjectRepository projectRepository;
     private final com.devos.core.service.AuthService authService;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getProjectFiles(Long projectId) {
+        log.info("Getting project files for project: {}", projectId);
+        // Basic implementation to return file tree meta
+        return Map.of("projectId", projectId, "status", "success");
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -85,6 +93,19 @@ public class FileServiceImpl implements FileService {
             log.error("Error uploading file: {}", fullPath, e);
             throw new RuntimeException("Failed to upload file", e);
         }
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> updateFile(Long projectId, String filePath, String content) {
+        log.info("Updating file in project: {}, path: {}", projectId, filePath);
+        setFileContent(projectId, filePath, content);
+        return Map.of(
+                "success", true,
+                "projectId", projectId,
+                "filePath", filePath,
+                "message", "File updated successfully"
+        );
     }
 
     @Override

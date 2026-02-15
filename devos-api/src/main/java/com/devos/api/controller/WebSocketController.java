@@ -73,7 +73,7 @@ public class WebSocketController {
         
         // Send initial status
         try {
-            var actionPlan = actionPlanService.getActionPlan(planId, null); // Token validation would be needed here
+            var actionPlan = actionPlanService.getActionPlan(planId); // Token validation would be needed here
             messagingTemplate.convertAndSendToUser(
                 principal.getName(),
                 "/queue/action-plan/" + planId,

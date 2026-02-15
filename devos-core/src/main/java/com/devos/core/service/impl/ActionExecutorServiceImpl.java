@@ -7,8 +7,9 @@ import com.devos.core.repository.ActionPlanRepository;
 import com.devos.core.repository.PlanStepRepository;
 import com.devos.core.repository.ProjectRepository;
 import com.devos.core.service.ActionExecutorService;
-import com.devos.file.service.FileService;
-import com.devos.file.service.GitService;
+import com.devos.core.service.FileService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import com.devos.core.service.GitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,15 +20,33 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class ActionExecutorServiceImpl implements ActionExecutorService {
 
+    private final ActionPlanRepository actionPlanRepository;
+    private final PlanStepRepository planStepRepository;
     private final ProjectRepository projectRepository;
     private final FileService fileService;
     private final GitService gitService;
     private final com.devos.core.repository.FileChangeRepository fileChangeRepository;
     private final com.devos.core.service.AuthService authService;
+
+    public ActionExecutorServiceImpl(
+            ActionPlanRepository actionPlanRepository,
+            PlanStepRepository planStepRepository,
+            ProjectRepository projectRepository,
+            @Qualifier("fileOperationsServiceImpl") FileService fileService,
+            GitService gitService,
+            com.devos.core.repository.FileChangeRepository fileChangeRepository,
+            com.devos.core.service.AuthService authService) {
+        this.actionPlanRepository = actionPlanRepository;
+        this.planStepRepository = planStepRepository;
+        this.projectRepository = projectRepository;
+        this.fileService = fileService;
+        this.gitService = gitService;
+        this.fileChangeRepository = fileChangeRepository;
+        this.authService = authService;
+    }
 
     @Override
     @Transactional

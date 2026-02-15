@@ -97,7 +97,7 @@ public class ProjectController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> indexProject(@PathVariable Long id) {
         // fileIndexingService should also be refactored or handles internally
-        fileIndexingService.indexProject(id, null); // Temporarily pass null if not yet refactored
+        fileIndexingService.indexProject(id);
         
         log.info("Project indexing started for ID: {}", id);
         return ResponseEntity.accepted().build();

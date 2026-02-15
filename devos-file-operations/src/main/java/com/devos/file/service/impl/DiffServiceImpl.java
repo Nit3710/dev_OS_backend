@@ -1,14 +1,15 @@
 package com.devos.file.service.impl;
 
 import com.devos.core.service.AuthService;
-import com.devos.file.service.DiffService;
-import com.devos.file.service.FileService;
+import com.devos.core.service.DiffService;
+import com.devos.core.service.FileService;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.AbstractDelta;
 import com.github.difflib.patch.DeltaType;
 import com.github.difflib.patch.Patch;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,18 +17,24 @@ import java.util.List;
 import java.util.Map;
 
 @Service("fileDiffServiceImpl")
-@RequiredArgsConstructor
 @Slf4j
 public class DiffServiceImpl implements DiffService {
 
     private final FileService fileService;
     private final AuthService authService;
 
+    public DiffServiceImpl(
+            @Qualifier("fileOperationsServiceImpl") FileService fileService,
+            AuthService authService) {
+        this.fileService = fileService;
+        this.authService = authService;
+    }
+
     @Override
-    public Object generateDiff(Long projectId, String filePath, String newContent, String token) {
+    public Map<String, Object> generateDiff(Long projectId, String filePath, String newContent) {
         try {
             // Get current file content
-            String currentContent = fileService.getFileContent(projectId, filePath, token);
+            String currentContent = fileService.getFileContent(projectId, filePath);
             if (currentContent == null) {
                 currentContent = "";
             }
@@ -42,10 +49,10 @@ public class DiffServiceImpl implements DiffService {
     }
 
     @Override
-    public Object compareFiles(Long projectId, String filePath1, String filePath2, String token) {
+    public Map<String, Object> compareFiles(Long projectId, String filePath1, String filePath2) {
         try {
-            String content1 = fileService.getFileContent(projectId, filePath1, token);
-            String content2 = fileService.getFileContent(projectId, filePath2, token);
+            String content1 = fileService.getFileContent(projectId, filePath1);
+            String content2 = fileService.getFileContent(projectId, filePath2);
             
             if (content1 == null) content1 = "";
             if (content2 == null) content2 = "";
