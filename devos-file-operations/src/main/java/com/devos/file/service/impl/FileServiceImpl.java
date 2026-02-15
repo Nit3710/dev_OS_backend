@@ -3,6 +3,8 @@ package com.devos.file.service.impl;
 import com.devos.core.domain.entity.Project;
 import com.devos.core.repository.ProjectRepository;
 import com.devos.core.service.FileService;
+import com.devos.core.service.FileIndexingService;
+import com.devos.core.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -22,13 +25,13 @@ import java.util.stream.Stream;
 public class FileServiceImpl implements FileService {
 
     private final ProjectRepository projectRepository;
-    private final com.devos.core.service.AuthService authService;
+    private final AuthService authService;
+    private final FileIndexingService fileIndexingService;
 
     @Override
     @Transactional(readOnly = true)
     public Map<String, Object> getProjectFiles(Long projectId) {
         log.info("Getting project files for project: {}", projectId);
-        // Basic implementation to return file tree meta
         return Map.of("projectId", projectId, "status", "success");
     }
 
@@ -60,6 +63,7 @@ public class FileServiceImpl implements FileService {
         try {
             Files.createDirectories(fullPath.getParent());
             Files.writeString(fullPath, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            fileIndexingService.updateIndex(projectId, filePath, content);
             log.info("File content updated: {}", fullPath);
         } catch (IOException e) {
             log.error("Error writing file: {}", fullPath, e);
@@ -80,6 +84,9 @@ public class FileServiceImpl implements FileService {
         try {
             Files.createDirectories(fullPath.getParent());
             file.transferTo(fullPath.toFile());
+            
+            String content = Files.readString(fullPath, StandardCharsets.UTF_8);
+            fileIndexingService.updateIndex(projectId, finalPath, content);
             
             return Map.of(
                     "success", true,
@@ -111,9 +118,59 @@ public class FileServiceImpl implements FileService {
     @Override
     @Transactional
     public Map<String, Object> applyChanges(Long projectId, Map<String, Object> changes) {
-        // This is complex and depends on the structure of 'changes'. 
-        // For now, let's assume it's handled by individual calls or refine later.
-        throw new UnsupportedOperationException("Batch applyChanges not implemented yet");
+        log.info("Applying batch changes for project: {}", projectId);
+        
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> operations = (List<Map<String, Object>>) changes.get("operations");
+        
+        if (operations == null || operations.isEmpty()) {
+            return Map.of("message", "No operations to apply", "success", true);
+        }
+
+        int successCount = 0;
+        int failureCount = 0;
+        
+        for (Map<String, Object> op : operations) {
+            String type = (String) op.get("type");
+            String path = (String) op.get("path");
+            String content = (String) op.get("content");
+            
+            try {
+                switch (type.toUpperCase()) {
+                    case "CREATE":
+                        createFile(projectId, path, content);
+                        successCount++;
+                        break;
+                    case "UPDATE":
+                        updateFile(projectId, path, content);
+                        successCount++;
+                        break;
+                    case "DELETE":
+                        deleteFile(projectId, path);
+                        successCount++;
+                        break;
+                    case "MOVE":
+                        String target = (String) op.get("target");
+                        moveFile(projectId, path, target);
+                        successCount++;
+                        break;
+                    default:
+                        log.warn("Unknown operation type in batch: {}", type);
+                        failureCount++;
+                }
+            } catch (Exception e) {
+                log.error("Failed to apply batch operation: {} on {}", type, path, e);
+                failureCount++;
+            }
+        }
+        
+        return Map.of(
+                "projectId", projectId,
+                "successCount", successCount,
+                "failureCount", failureCount,
+                "totalOperations", operations.size(),
+                "message", String.format("Batch complete: %d success, %d failure", successCount, failureCount)
+        );
     }
 
     @Override
@@ -132,6 +189,7 @@ public class FileServiceImpl implements FileService {
                 }
             } else {
                 Files.deleteIfExists(fullPath);
+                fileIndexingService.removeFromIndex(projectId, filePath);
             }
             log.info("File/Directory deleted: {}", fullPath);
         } catch (IOException e) {
@@ -167,6 +225,12 @@ public class FileServiceImpl implements FileService {
             Files.createDirectories(target.getParent());
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
             log.info("File moved from {} to {}", source, target);
+            
+            // Update index
+            fileIndexingService.removeFromIndex(projectId, sourcePath);
+            if (!Files.isDirectory(target)) {
+                fileIndexingService.updateIndex(projectId, targetPath, Files.readString(target));
+            }
         } catch (IOException e) {
             log.error("Error moving file", e);
             throw new RuntimeException("Failed to move file", e);
@@ -175,9 +239,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public Object searchInFiles(Long projectId, String query, String filePattern, Boolean caseSensitive) {
-        // Implementation requires file walking and regex matching
-        // Leaving as placeholder for now as it doesn't block execution
-        return Map.of("message", "Not implemented yet");
+        log.info("Initiating search in project: {} for query: {}", projectId, query);
+        return fileIndexingService.searchInProject(projectId, query);
     }
 
     private Path validateAndResolvePath(Long projectId, String relativePath) {

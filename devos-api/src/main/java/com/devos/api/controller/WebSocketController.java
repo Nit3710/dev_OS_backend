@@ -91,9 +91,7 @@ public class WebSocketController {
     private void processAIResponse(Long projectId, String content, String threadId, 
                                    Long llmProviderId, Principal principal) {
         
-        // This would typically be executed in a separate thread or async service
         try {
-            // Simulate AI processing
             messagingTemplate.convertAndSendToUser(
                 principal.getName(),
                 "/queue/chat/" + projectId,
@@ -104,17 +102,25 @@ public class WebSocketController {
                 )
             );
             
-            // In a real implementation, you would call the AI service here
-            // For now, we'll simulate a response
-            Thread.sleep(1000);
+            // Call the real AI service
+            com.devos.core.domain.entity.AIMessage response = aiChatService.sendMessage(
+                projectId, 
+                content, 
+                threadId, 
+                llmProviderId, 
+                null, 
+                null, 
+                null
+            );
             
             messagingTemplate.convertAndSendToUser(
                 principal.getName(),
                 "/queue/chat/" + projectId,
                 Map.of(
                     "type", "ai_response",
-                    "content", "This is a simulated AI response to: " + content,
-                    "threadId", threadId,
+                    "content", response.getContent(),
+                    "threadId", response.getThreadId(),
+                    "messageId", response.getId(),
                     "timestamp", System.currentTimeMillis()
                 )
             );

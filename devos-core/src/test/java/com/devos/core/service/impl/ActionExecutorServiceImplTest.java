@@ -44,6 +44,8 @@ class ActionExecutorServiceImplTest {
     private FileChangeRepository fileChangeRepository;
     @Mock
     private com.devos.core.service.AuthService authService;
+    @Mock
+    private com.devos.core.service.CommandSandboxService commandSandboxService;
 
     @InjectMocks
     private ActionExecutorServiceImpl actionExecutorService;
