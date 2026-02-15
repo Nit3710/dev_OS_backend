@@ -38,7 +38,7 @@ public class Project {
     @Column(name = "repository_url")
     private String repositoryUrl;
 
-    @Column(name = "local_path", nullable = false)
+    @Column(name = "local_path")
     private String localPath;
 
     @Enumerated(EnumType.STRING)

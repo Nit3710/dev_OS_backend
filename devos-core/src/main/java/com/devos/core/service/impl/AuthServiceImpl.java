@@ -113,16 +113,25 @@ public class AuthServiceImpl implements AuthService {
             username = principal.toString();
         }
         
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        // The username in SecurityContext is actually the user ID
+        try {
+            Long userId = Long.parseLong(username);
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + userId));
+        } catch (NumberFormatException e) {
+            // If it's not a number, try to find by username (fallback)
+            return userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        }
     }
 
     @Override
     public User getCurrentUser(String token) {
         try {
-            String username = extractUsername(token);
-            return userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            String subject = extractUsername(token); // This is actually the user ID
+            Long userId = Long.parseLong(subject);
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + userId));
         } catch (Exception e) {
             log.error("Error getting current user from token", e);
             throw new RuntimeException("Invalid token", e);
@@ -154,7 +163,7 @@ public class AuthServiceImpl implements AuthService {
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
-        claims.put("role", user.getRole());
+        claims.put("role", "ROLE_" + user.getRole().name());
         claims.put("email", user.getEmail());
         
         return createToken(claims, String.valueOf(user.getId()), jwtExpiration);
