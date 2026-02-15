@@ -13,7 +13,7 @@ public interface AIChatService {
     AIMessage sendMessage(Long projectId, String content, String threadId, Long llmProviderId, 
                         Map<String, Object> context, Integer maxTokens, Double temperature);
 
-    SseEmitter streamMessage(Long projectId, String message, String threadId, Long llmProviderId);
+    SseEmitter streamMessage(Long projectId, String message, String threadId, Long llmProviderId, Map<String, Object> context);
 
     Page<AIMessage> getMessages(Long projectId, Pageable pageable);
 

@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/files")
+@RequestMapping("/api/files")
 @Slf4j
 public class FileController {
 
@@ -30,8 +30,8 @@ public class FileController {
     @GetMapping("/{projectId}/content")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<String> getFileContent(
-            @PathVariable Long projectId,
-            @RequestParam String filePath) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("filePath") String filePath) {
         
         String content = fileService.getFileContent(projectId, filePath);
         return ResponseEntity.ok(content);
@@ -40,8 +40,8 @@ public class FileController {
     @PostMapping("/{projectId}/content")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> setFileContent(
-            @PathVariable Long projectId,
-            @RequestParam String filePath,
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("filePath") String filePath,
             @RequestBody String content) {
         
         fileService.setFileContent(projectId, filePath, content);
@@ -53,9 +53,9 @@ public class FileController {
     @PostMapping("/{projectId}/upload")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> uploadFile(
-            @PathVariable Long projectId,
+            @PathVariable("projectId") Long projectId,
             @RequestParam("file") MultipartFile file,
-            @RequestParam(required = false) String targetPath) {
+            @RequestParam(name = "targetPath", required = false) String targetPath) {
         
         Map<String, Object> result = fileService.uploadFile(projectId, file, targetPath);
         
@@ -66,8 +66,8 @@ public class FileController {
     @PostMapping("/{projectId}/diff")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Object> generateDiff(
-            @PathVariable Long projectId,
-            @RequestParam String filePath,
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("filePath") String filePath,
             @RequestBody(required = false) String newContent) {
         
         Object diff = diffService.generateDiff(projectId, filePath, newContent);
@@ -78,9 +78,9 @@ public class FileController {
     @PostMapping("/{projectId}/diff/compare")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Object> compareFiles(
-            @PathVariable Long projectId,
-            @RequestParam String filePath1,
-            @RequestParam String filePath2) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("filePath1") String filePath1,
+            @RequestParam("filePath2") String filePath2) {
         
         Object diff = diffService.compareFiles(projectId, filePath1, filePath2);
         
@@ -90,7 +90,7 @@ public class FileController {
     @PutMapping("/{projectId}/apply")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> applyChanges(
-            @PathVariable Long projectId,
+            @PathVariable("projectId") Long projectId,
             @RequestBody Map<String, Object> changes) {
         
         Map<String, Object> result = fileService.applyChanges(projectId, changes);
@@ -102,8 +102,8 @@ public class FileController {
     @DeleteMapping("/{projectId}/file")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteFile(
-            @PathVariable Long projectId,
-            @RequestParam String filePath) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("filePath") String filePath) {
         
         fileService.deleteFile(projectId, filePath);
         
@@ -114,8 +114,8 @@ public class FileController {
     @PostMapping("/{projectId}/create")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> createFile(
-            @PathVariable Long projectId,
-            @RequestParam String filePath,
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("filePath") String filePath,
             @RequestBody(required = false) String content) {
         
         Map<String, Object> result = fileService.createFile(projectId, filePath, content);
@@ -127,9 +127,9 @@ public class FileController {
     @PostMapping("/{projectId}/move")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> moveFile(
-            @PathVariable Long projectId,
-            @RequestParam String sourcePath,
-            @RequestParam String targetPath) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("sourcePath") String sourcePath,
+            @RequestParam("targetPath") String targetPath) {
         
         fileService.moveFile(projectId, sourcePath, targetPath);
         
@@ -140,10 +140,10 @@ public class FileController {
     @GetMapping("/{projectId}/search")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Object> searchInFiles(
-            @PathVariable Long projectId,
-            @RequestParam String query,
-            @RequestParam(required = false) String filePattern,
-            @RequestParam(required = false) Boolean caseSensitive) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("query") String query,
+            @RequestParam(name = "filePattern", required = false) String filePattern,
+            @RequestParam(name = "caseSensitive", required = false) Boolean caseSensitive) {
         
         Object results = fileService.searchInFiles(projectId, query, filePattern, caseSensitive);
         

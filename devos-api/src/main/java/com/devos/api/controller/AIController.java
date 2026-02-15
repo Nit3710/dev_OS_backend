@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/ai")
+@RequestMapping("/api/ai")
 @RequiredArgsConstructor
 @Slf4j
 public class AIController {
@@ -30,7 +30,7 @@ public class AIController {
     @PostMapping("/chat/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<AIMessageDto> sendMessage(
-            @PathVariable Long projectId,
+            @PathVariable("projectId") Long projectId,
             @Valid @RequestBody ChatRequest chatRequest) {
         
         AIMessage response = aiChatService.sendMessage(
@@ -50,25 +50,26 @@ public class AIController {
     @GetMapping(value = "/chat/{projectId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public SseEmitter streamChat(
-            @PathVariable Long projectId,
-            @RequestParam String message,
-            @RequestParam(required = false) String threadId,
-            @RequestParam(required = false) Long llmProviderId) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam("message") String message,
+            @RequestParam(name = "threadId", required = false) String threadId,
+            @RequestParam(name = "llmProviderId", required = false) Long llmProviderId) {
         
         return aiChatService.streamMessage(
             projectId,
             message,
             threadId,
-            llmProviderId
+            llmProviderId,
+            new java.util.HashMap<>() // TODO: Support passing context via stream
         );
     }
 
     @GetMapping("/messages/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Page<AIMessageDto>> getMessages(
-            @PathVariable Long projectId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "50") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
         Page<AIMessage> messages = aiChatService.getMessages(projectId, pageable);
@@ -80,8 +81,8 @@ public class AIController {
     @GetMapping("/messages/{projectId}/thread/{threadId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<List<AIMessageDto>> getThreadMessages(
-            @PathVariable Long projectId,
-            @PathVariable String threadId) {
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("threadId") String threadId) {
         
         List<AIMessage> messages = aiChatService.getThreadMessages(projectId, threadId);
         List<AIMessageDto> messageDtos = messages.stream()
@@ -93,7 +94,7 @@ public class AIController {
 
     @DeleteMapping("/messages/{messageId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteMessage(@PathVariable Long messageId) {
+    public ResponseEntity<Void> deleteMessage(@PathVariable("messageId") Long messageId) {
         aiChatService.deleteMessage(messageId);
         
         log.info("AI message deleted: {}", messageId);
@@ -102,7 +103,7 @@ public class AIController {
 
     @GetMapping("/usage/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Object> getUsageStats(@PathVariable Long projectId) {
+    public ResponseEntity<Object> getUsageStats(@PathVariable("projectId") Long projectId) {
         Object usageStats = aiChatService.getUsageStats(projectId);
         
         return ResponseEntity.ok(usageStats);
@@ -111,8 +112,8 @@ public class AIController {
     @PostMapping("/clear/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> clearChat(
-            @PathVariable Long projectId,
-            @RequestParam(required = false) String threadId) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam(name = "threadId", required = false) String threadId) {
         
         aiChatService.clearChat(projectId, threadId);
         

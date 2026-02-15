@@ -28,6 +28,8 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@jakarta.annotation.Priority(1)
+@lombok.extern.slf4j.Slf4j
 public class SecurityConfig {
 
     private final UserService userService;
@@ -49,7 +51,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/health").permitAll()
+                .requestMatchers("/api/health/**").permitAll()
+                .requestMatchers("/error").permitAll()
 
                 // Static resources and documentation
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -59,6 +62,12 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    log.debug("Unauthenticated request to {}: {}", request.getRequestURI(), authException.getMessage());
+                    response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
+                })
+            )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

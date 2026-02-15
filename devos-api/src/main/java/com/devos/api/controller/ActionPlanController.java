@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/ai/plans")
+@RequestMapping("/api/ai/plans")
 @RequiredArgsConstructor
 @Slf4j
 public class ActionPlanController {
@@ -25,14 +25,14 @@ public class ActionPlanController {
 
     @GetMapping("/{planId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> getActionPlan(@PathVariable Long planId) {
+    public ResponseEntity<ActionPlanDto> getActionPlan(@PathVariable("planId") Long planId) {
         ActionPlan actionPlan = actionPlanService.getActionPlan(planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
     @GetMapping("/project/{projectId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<List<ActionPlanDto>> getProjectPlans(@PathVariable Long projectId) {
+    public ResponseEntity<List<ActionPlanDto>> getProjectPlans(@PathVariable("projectId") Long projectId) {
         List<ActionPlan> plans = actionPlanService.getProjectActionPlans(projectId);
         List<ActionPlanDto> planDtos = plans.stream()
                 .map(ActionPlanDto::from)
@@ -43,7 +43,7 @@ public class ActionPlanController {
 
     @PostMapping("/{planId}/approve")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> approveActionPlan(@PathVariable Long planId) {
+    public ResponseEntity<ActionPlanDto> approveActionPlan(@PathVariable("planId") Long planId) {
         ActionPlan actionPlan = actionPlanService.approveActionPlan(planId);
         log.info("Action plan approved: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
@@ -51,7 +51,7 @@ public class ActionPlanController {
 
     @PostMapping("/{planId}/apply")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> executeActionPlan(@PathVariable Long planId) {
+    public ResponseEntity<ActionPlanDto> executeActionPlan(@PathVariable("planId") Long planId) {
         ActionPlan actionPlan = actionExecutorService.executePlan(planId);
         log.info("Action plan execution completed: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
@@ -60,8 +60,8 @@ public class ActionPlanController {
     @PostMapping("/{planId}/steps/{stepId}/execute")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> executeStep(
-            @PathVariable Long planId,
-            @PathVariable Long stepId) {
+            @PathVariable("planId") Long planId,
+            @PathVariable("stepId") Long stepId) {
         
         actionExecutorService.executeStep(stepId);
         log.info("Step execution completed: {}", stepId);
@@ -70,7 +70,7 @@ public class ActionPlanController {
 
     @PostMapping("/{planId}/rollback")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> rollbackActionPlan(@PathVariable Long planId) {
+    public ResponseEntity<ActionPlanDto> rollbackActionPlan(@PathVariable("planId") Long planId) {
         ActionPlan actionPlan = actionPlanService.rollbackActionPlan(planId);
         log.info("Action plan rollback started: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
@@ -78,7 +78,7 @@ public class ActionPlanController {
 
     @PostMapping("/{planId}/pause")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> pauseActionPlan(@PathVariable Long planId) {
+    public ResponseEntity<ActionPlanDto> pauseActionPlan(@PathVariable("planId") Long planId) {
         ActionPlan actionPlan = actionPlanService.pauseActionPlan(planId);
         log.info("Action plan paused: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
@@ -86,7 +86,7 @@ public class ActionPlanController {
 
     @PostMapping("/{planId}/resume")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<ActionPlanDto> resumeActionPlan(@PathVariable Long planId) {
+    public ResponseEntity<ActionPlanDto> resumeActionPlan(@PathVariable("planId") Long planId) {
         ActionPlan actionPlan = actionPlanService.resumeActionPlan(planId);
         log.info("Action plan resumed: {}", planId);
         return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
@@ -94,7 +94,7 @@ public class ActionPlanController {
 
     @GetMapping("/{planId}/steps")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<List<PlanStepDto>> getPlanSteps(@PathVariable Long planId) {
+    public ResponseEntity<List<PlanStepDto>> getPlanSteps(@PathVariable("planId") Long planId) {
         var steps = actionPlanService.getPlanSteps(planId);
         List<PlanStepDto> stepDtos = steps.stream()
                 .map(PlanStepDto::from)
@@ -106,8 +106,8 @@ public class ActionPlanController {
     @PostMapping("/{planId}/steps/{stepId}/retry")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<PlanStepDto> retryStep(
-            @PathVariable Long planId,
-            @PathVariable Long stepId) {
+            @PathVariable("planId") Long planId,
+            @PathVariable("stepId") Long stepId) {
         
         var step = actionPlanService.retryStep(planId, stepId);
         log.info("Step retry initiated: {} for plan: {}", stepId, planId);
@@ -116,7 +116,7 @@ public class ActionPlanController {
 
     @DeleteMapping("/{planId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteActionPlan(@PathVariable Long planId) {
+    public ResponseEntity<Void> deleteActionPlan(@PathVariable("planId") Long planId) {
         actionPlanService.deleteActionPlan(planId);
         log.info("Action plan deleted: {}", planId);
         return ResponseEntity.noContent().build();

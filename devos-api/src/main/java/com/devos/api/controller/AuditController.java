@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/audit")
+@RequestMapping("/api/audit")
 @RequiredArgsConstructor
 @Slf4j
 public class AuditController {
@@ -28,14 +28,14 @@ public class AuditController {
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Page<AuditLog>> getAuditLogs(
             @RequestHeader("Authorization") String token,
-            @PathVariable Long projectId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) AuditLog.AuditAction action,
-            @RequestParam(required = false) LocalDateTime since,
-            @RequestParam(required = false) LocalDateTime until) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "50") int size,
+            @RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(name = "sortDir", defaultValue = "desc") String sortDir,
+            @RequestParam(name = "action", required = false) AuditLog.AuditAction action,
+            @RequestParam(name = "since", required = false) LocalDateTime since,
+            @RequestParam(name = "until", required = false) LocalDateTime until) {
         
         String jwtToken = token.replace("Bearer ", "");
         
@@ -52,7 +52,7 @@ public class AuditController {
     @GetMapping("/activity")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getSystemActivity(
-            @RequestParam(defaultValue = "24") int hours) {
+            @RequestParam(name = "hours", defaultValue = "24") int hours) {
         
         List<Map<String, Object>> activity = auditService.getSystemActivity(hours);
         return ResponseEntity.ok(activity);
@@ -62,8 +62,8 @@ public class AuditController {
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getProjectStats(
             @RequestHeader("Authorization") String token,
-            @PathVariable Long projectId,
-            @RequestParam(defaultValue = "7") int days) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam(name = "days", defaultValue = "7") int days) {
         
         String jwtToken = token.replace("Bearer ", "");
         Map<String, Object> stats = auditService.getProjectStats(projectId, days, jwtToken);
@@ -74,7 +74,7 @@ public class AuditController {
     @GetMapping("/errors")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<AuditLog>> getRecentErrors(
-            @RequestParam(defaultValue = "24") int hours) {
+            @RequestParam(name = "hours", defaultValue = "24") int hours) {
         
         List<AuditLog> errors = auditService.getRecentErrors(hours);
         return ResponseEntity.ok(errors);
@@ -83,9 +83,9 @@ public class AuditController {
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('ADMIN') or @auditService.isCurrentUser(#userId, authentication)")
     public ResponseEntity<Page<AuditLog>> getUserAuditLogs(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @PathVariable("userId") Long userId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "50") int size) {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<AuditLog> logs = auditService.getUserAuditLogs(userId, pageable);
@@ -109,10 +109,10 @@ public class AuditController {
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<byte[]> exportAuditLogs(
             @RequestHeader("Authorization") String token,
-            @PathVariable Long projectId,
-            @RequestParam(required = false) LocalDateTime since,
-            @RequestParam(required = false) LocalDateTime until,
-            @RequestParam(defaultValue = "json") String format) {
+            @PathVariable("projectId") Long projectId,
+            @RequestParam(name = "since", required = false) LocalDateTime since,
+            @RequestParam(name = "until", required = false) LocalDateTime until,
+            @RequestParam(name = "format", defaultValue = "json") String format) {
         
         String jwtToken = token.replace("Bearer ", "");
         byte[] exportData = auditService.exportAuditLogs(projectId, since, until, format, jwtToken);

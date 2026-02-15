@@ -31,12 +31,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         
-        final String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
+        String jwt = null;
 
-        // Only process if Authorization header exists and starts with "Bearer "
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String jwt = authHeader.substring(7);
+            jwt = authHeader.substring(7);
+            log.debug("JWT found in Authorization header");
+        } else {
+            jwt = request.getParameter("token");
+            if (jwt != null) {
+                log.debug("JWT found in query parameter 'token'");
+            }
+        }
 
+        if (jwt == null) {
+            log.debug("No JWT token found in request: {}", request.getRequestURI());
+        }
+
+        if (jwt != null) {
             try {
                 String userEmail = authService.extractUsername(jwt);
 
