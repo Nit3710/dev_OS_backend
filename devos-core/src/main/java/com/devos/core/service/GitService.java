@@ -38,4 +38,6 @@ public interface GitService {
     void pullChanges(String projectPath);
 
     void pushChanges(String projectPath, String branchName);
+
+    void cloneRepository(String projectPath, String repositoryUrl);
 }

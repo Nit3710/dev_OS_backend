@@ -274,6 +274,32 @@ public class GitServiceImpl implements GitService {
         }
     }
 
+    @Override
+    public void cloneRepository(String projectPath, String repositoryUrl) {
+        try {
+            File destination = new File(projectPath);
+            if (destination.exists() && destination.isDirectory() && new File(destination, ".git").exists()) {
+                 log.info("Repository already exists at {}", projectPath);
+                 return;
+            }
+            
+            // Ensure parent directory exists
+            if (!destination.exists()) {
+                destination.mkdirs();
+            }
+
+            log.info("Cloning repository from {} to {}", repositoryUrl, projectPath);
+            Git.cloneRepository()
+                    .setURI(repositoryUrl)
+                    .setDirectory(destination)
+                    .call();
+            log.info("Cloned repository successfully");
+        } catch (GitAPIException e) {
+            log.error("Error cloning repository", e);
+            throw new RuntimeException("Failed to clone repository", e);
+        }
+    }
+
     private Git openGitRepository(String projectPath) {
         try {
             File gitDir = new File(projectPath, ".git");

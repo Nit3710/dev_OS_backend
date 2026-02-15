@@ -47,7 +47,7 @@ public class ProjectController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ProjectDto> getProject(@PathVariable Long id) {
+    public ResponseEntity<ProjectDto> getProject(@PathVariable("id") Long id) {
         Project project = projectService.getProject(id);
         return ResponseEntity.ok(ProjectDto.from(project));
     }
@@ -64,7 +64,7 @@ public class ProjectController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<ProjectDto> updateProject(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody ProjectDto projectDto) {
         
         Project project = projectService.updateProject(id, projectDto.toEntity());
@@ -75,7 +75,7 @@ public class ProjectController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProject(@PathVariable("id") Long id) {
         projectService.deleteProject(id);
         
         log.info("Project deleted with ID: {}", id);
@@ -85,8 +85,8 @@ public class ProjectController {
     @GetMapping("/{id}/file-tree")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Object> getFileTree(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "false") boolean includeContent) {
+            @PathVariable("id") Long id,
+            @RequestParam(name = "includeContent", defaultValue = "false") boolean includeContent) {
         
         Object fileTree = projectService.getFileTree(id, includeContent);
         
@@ -95,7 +95,7 @@ public class ProjectController {
 
     @PostMapping("/{id}/index")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
-    public ResponseEntity<Void> indexProject(@PathVariable Long id) {
+    public ResponseEntity<Void> indexProject(@PathVariable("id") Long id) {
         // fileIndexingService should also be refactored or handles internally
         fileIndexingService.indexProject(id);
         
@@ -105,7 +105,7 @@ public class ProjectController {
 
     @GetMapping("/search")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ProjectDto>> searchProjects(@RequestParam String query) {
+    public ResponseEntity<List<ProjectDto>> searchProjects(@RequestParam(name = "query") String query) {
         List<Project> projects = projectService.searchProjects(query);
         List<ProjectDto> projectDtos = projects.stream()
                 .map(ProjectDto::from)

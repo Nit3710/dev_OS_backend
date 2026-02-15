@@ -41,6 +41,12 @@ public class Project {
     @Column(name = "local_path")
     private String localPath;
 
+    @Column(name = "language")
+    private String language;
+
+    @Column(name = "file_count")
+    private Integer fileCount = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProjectStatus status = ProjectStatus.ACTIVE;

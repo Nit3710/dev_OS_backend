@@ -20,6 +20,7 @@ public class ProjectDto {
     private String description;
     private String repositoryUrl;
     private String localPath;
+    private String language;
     private Project.ProjectStatus status;
     private Boolean isIndexed;
     private LocalDateTime lastIndexedAt;
@@ -28,6 +29,7 @@ public class ProjectDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long userId;
+    private int fileCount;
     
     public static ProjectDto from(Project project) {
         return ProjectDto.builder()
@@ -37,6 +39,7 @@ public class ProjectDto {
                 .description(project.getDescription())
                 .repositoryUrl(project.getRepositoryUrl())
                 .localPath(project.getLocalPath())
+                .language(project.getLanguage())
                 .status(project.getStatus())
                 .isIndexed(project.getIsIndexed())
                 .lastIndexedAt(project.getLastIndexedAt())
@@ -45,6 +48,7 @@ public class ProjectDto {
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
                 .userId(project.getUser() != null ? project.getUser().getId() : null)
+                .fileCount(project.getFileCount() != null ? project.getFileCount() : 0)
                 .build();
     }
     
@@ -56,6 +60,8 @@ public class ProjectDto {
         project.setDescription(this.description);
         project.setRepositoryUrl(this.repositoryUrl);
         project.setLocalPath(this.localPath);
+        project.setLanguage(this.language);
+        project.setFileCount(this.fileCount);
         project.setStatus(this.status);
         project.setIsIndexed(this.isIndexed);
         project.setLastIndexedAt(this.lastIndexedAt);

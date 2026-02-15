@@ -38,6 +38,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT COUNT(p) FROM Project p WHERE p.user.id = :userId AND p.status = 'ACTIVE'")
     long countActiveProjectsByUser(@Param("userId") Long userId);
 
-    @Query("SELECT p FROM Project p WHERE p.name LIKE %:search% OR p.description LIKE %:search% AND p.user.id = :userId")
+    @Query("SELECT p FROM Project p WHERE (p.name LIKE %:search% OR p.description LIKE %:search%) AND p.user.id = :userId AND p.status != 'DELETED'")
     List<Project> searchProjects(@Param("search") String search, @Param("userId") Long userId);
 }
