@@ -30,6 +30,7 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
     private final GitService gitService;
     private final com.devos.core.repository.FileChangeRepository fileChangeRepository;
     private final com.devos.core.service.AuthService authService;
+    private final com.devos.core.service.CommandSandboxService commandSandboxService;
 
     public ActionExecutorServiceImpl(
             ActionPlanRepository actionPlanRepository,
@@ -38,7 +39,8 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
             @Qualifier("fileOperationsServiceImpl") FileService fileService,
             GitService gitService,
             com.devos.core.repository.FileChangeRepository fileChangeRepository,
-            com.devos.core.service.AuthService authService) {
+            com.devos.core.service.AuthService authService,
+            com.devos.core.service.CommandSandboxService commandSandboxService) {
         this.actionPlanRepository = actionPlanRepository;
         this.planStepRepository = planStepRepository;
         this.projectRepository = projectRepository;
@@ -46,6 +48,7 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
         this.gitService = gitService;
         this.fileChangeRepository = fileChangeRepository;
         this.authService = authService;
+        this.commandSandboxService = commandSandboxService;
     }
 
     @Override
@@ -207,47 +210,14 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
             throw new IllegalArgumentException("Run command requires 'command' parameter");
         }
 
-        log.info("Running command in {}: {}", projectPath, command);
+        com.devos.core.service.CommandSandboxService.CommandResult result = 
+                commandSandboxService.executeCommand(command, projectPath, null);
         
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            // This is a basic shell executor. In a real production environment, 
-            // you must use a sandbox like Docker or a MicroVM.
-            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-                processBuilder.command("cmd.exe", "/c", command);
-            } else {
-                processBuilder.command("sh", "-c", command);
-            }
-            
-            processBuilder.directory(new java.io.File(projectPath));
-            processBuilder.redirectErrorStream(true); // Merge stderr into stdout
-            
-            Process process = processBuilder.start();
-            
-            StringBuilder output = new StringBuilder();
-            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
-                    if (output.length() > 50000) { // Safety limit for output size
-                        output.append("... [Output Truncated] ...");
-                        break;
-                    }
-                }
-            }
-            
-            int exitCode = process.waitFor();
-            step.setOutput(output.toString());
-            
-            if (exitCode != 0) {
-                step.setErrorMessage("Command failed with exit code: " + exitCode);
-                // We might set status to FAILED here, but executeStep handles the exception
-                throw new RuntimeException("Command failed: " + command + " (Exit code: " + exitCode + ")");
-            }
-            
-        } catch (Exception e) {
-            log.error("Error executing command", e);
-            throw new RuntimeException("Command execution failed: " + e.getMessage(), e);
+        step.setOutput(result.getOutput());
+        
+        if (!result.isSuccess()) {
+            step.setErrorMessage(result.getError() != null ? result.getError() : "Command failed with exit code: " + result.getExitCode());
+            throw new RuntimeException("Command execution failed: " + step.getErrorMessage());
         }
     }
 

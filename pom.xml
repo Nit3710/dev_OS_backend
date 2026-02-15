@@ -106,6 +106,26 @@
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>6.8.0.202311291450-r</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>9.9.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queryparser</artifactId>
+                <version>9.9.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analysis-common</artifactId>
+                <version>9.9.1</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.15.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

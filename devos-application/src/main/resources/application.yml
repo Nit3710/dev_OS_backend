@@ -96,3 +96,7 @@ devos:
     default-branch: main
     auto-commit: false
     commit-message-template: "DevOS: {action} - {description}"
+  
+  indexing:
+    path: .devos/index
+    enabled: true

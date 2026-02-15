@@ -160,14 +160,59 @@ public class FileServiceImpl implements FileService {
     @Override
     @Transactional
     public Map<String, Object> applyChanges(Long projectId, Map<String, Object> changes) {
-        // This would typically apply multiple file operations
-        // For now, return a success response
+        log.info("Applying batch changes for project: {}", projectId);
+        
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> operations = (List<Map<String, Object>>) changes.get("operations");
+        
+        if (operations == null || operations.isEmpty()) {
+            return Map.of("message", "No operations to apply", "success", true);
+        }
+
+        int successCount = 0;
+        int failureCount = 0;
+        
+        for (Map<String, Object> op : operations) {
+            String type = (String) op.get("type");
+            String path = (String) op.get("path");
+            String content = (String) op.get("content");
+            
+            try {
+                switch (type.toUpperCase()) {
+                    case "CREATE":
+                        createFile(projectId, path, content);
+                        successCount++;
+                        break;
+                    case "UPDATE":
+                        updateFile(projectId, path, content);
+                        successCount++;
+                        break;
+                    case "DELETE":
+                        deleteFile(projectId, path);
+                        successCount++;
+                        break;
+                    case "MOVE":
+                        String target = (String) op.get("target");
+                        moveFile(projectId, path, target);
+                        successCount++;
+                        break;
+                    default:
+                        log.warn("Unknown operation type in batch: {}", type);
+                        failureCount++;
+                }
+            } catch (Exception e) {
+                log.error("Failed to apply batch operation: {} on {}", type, path, e);
+                failureCount++;
+            }
+        }
+        
         Map<String, Object> result = new HashMap<>();
         result.put("projectId", projectId);
-        result.put("changes", changes);
-        result.put("message", "Changes applied successfully");
+        result.put("successCount", successCount);
+        result.put("failureCount", failureCount);
+        result.put("totalOperations", operations.size());
+        result.put("message", String.format("Batch complete: %d success, %d failure", successCount, failureCount));
         
-        log.info("Applied changes for project: {}", projectId);
         return result;
     }
 

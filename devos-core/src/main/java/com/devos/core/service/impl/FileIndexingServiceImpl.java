@@ -1,92 +1,190 @@
 package com.devos.core.service.impl;
 
+import com.devos.core.domain.entity.Project;
+import com.devos.core.repository.ProjectRepository;
 import com.devos.core.service.FileIndexingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.*;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.*;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class FileIndexingServiceImpl implements FileIndexingService {
 
+    private final ProjectRepository projectRepository;
+
+    @Value("${devos.indexing.path:.devos/index}")
+    private String indexPath;
+
+    @Value("${devos.indexing.enabled:true}")
+    private boolean indexingEnabled;
+
     @Override
     @Transactional
     public void indexProject(Long projectId) {
-        log.info("Starting indexing for project: {}", projectId);
+        if (!indexingEnabled) return;
         
-        // This would typically:
-        // 1. Get all files for the project
-        // 2. Process each file and extract content
-        // 3. Index the content in search engine (like Elasticsearch)
-        // 4. Update project indexing status
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
         
-        // For now, just log the operation
-        log.info("Completed indexing for project: {}", projectId);
+        log.info("Starting full indexing for project: {} ({})", project.getName(), projectId);
+        
+        try (Directory directory = FSDirectory.open(Paths.get(indexPath, projectId.toString()));
+             Analyzer analyzer = new StandardAnalyzer()) {
+            
+            IndexWriterConfig config = new IndexWriterConfig(analyzer);
+            config.setOpenMode(IndexWriterConfig.OpenMode.CREATE); // Re-create index
+            
+            try (IndexWriter writer = new IndexWriter(directory, config)) {
+                File projectDir = new File(project.getLocalPath());
+                if (!projectDir.exists()) {
+                    log.error("Project path does not exist: {}", project.getLocalPath());
+                    return;
+                }
+
+                Collection<File> files = FileUtils.listFiles(projectDir, null, true);
+                for (File file : files) {
+                    if (isIndexable(file)) {
+                        indexFile(writer, project.getLocalPath(), file);
+                    }
+                }
+            }
+            
+            project.setIsIndexed(true);
+            project.setLastIndexedAt(LocalDateTime.now());
+            projectRepository.save(project);
+            
+            log.info("Completed indexing for project: {}", projectId);
+        } catch (IOException e) {
+            log.error("Error indexing project: {}", projectId, e);
+        }
     }
 
     @Override
     @Transactional
     public void indexProjectFiles(Long projectId) {
-        log.info("Starting file indexing for project: {}", projectId);
-        
-        // This would typically:
-        // 1. Get all file nodes for the project
-        // 2. Filter for text files (not binary)
-        // 3. Read file contents
-        // 4. Index each file with metadata
-        
-        // For now, just log the operation
-        log.info("Completed file indexing for project: {}", projectId);
+        // For simplicity, we just do a full index for now as per indexProject
+        indexProject(projectId);
     }
 
     @Override
-    public Map<String, Object> searchInProject(Long projectId, String query) {
-        log.info("Searching in project: {} with query: {}", projectId, query);
+    public Map<String, Object> searchInProject(Long projectId, String queryStr) {
+        log.info("Searching in project: {} with query: {}", projectId, queryStr);
         
-        // This would typically:
-        // 1. Execute search query against indexed content
-        // 2. Return search results with file paths and snippets
-        // 3. Include relevance scores and metadata
+        List<Map<String, Object>> results = new ArrayList<>();
         
-        // For now, return a placeholder response
-        return Map.of(
-                "projectId", projectId,
-                "query", query,
-                "results", java.util.List.of(),
-                "totalHits", 0,
-                "message", "Search functionality not yet implemented"
-        );
+        try (Directory directory = FSDirectory.open(Paths.get(indexPath, projectId.toString()));
+             IndexReader reader = DirectoryReader.open(directory)) {
+            
+            IndexSearcher searcher = new IndexSearcher(reader);
+            Analyzer analyzer = new StandardAnalyzer();
+            QueryParser parser = new QueryParser("content", analyzer);
+            Query query = parser.parse(queryStr);
+            
+            TopDocs topDocs = searcher.search(query, 50);
+            for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+                Document doc = searcher.doc(scoreDoc.doc);
+                Map<String, Object> result = new HashMap<>();
+                result.put("path", doc.get("path"));
+                result.put("score", scoreDoc.score);
+                results.add(result);
+            }
+            
+            return Map.of(
+                    "projectId", projectId,
+                    "query", queryStr,
+                    "results", results,
+                    "totalHits", topDocs.totalHits.value
+            );
+        } catch (Exception e) {
+            log.error("Error searching in project: {}", projectId, e);
+            return Map.of("error", e.getMessage(), "results", List.of());
+        }
     }
 
     @Override
     @Transactional
     public void updateIndex(Long projectId, String filePath, String content) {
-        log.info("Updating index for project: {}, file: {}", projectId, filePath);
-        
-        // This would typically:
-        // 1. Update the indexed content for the specific file
-        // 2. Re-index the file with new content
-        // 3. Update file metadata in search index
-        
-        // For now, just log the operation
-        log.info("Updated index for project: {}, file: {}", projectId, filePath);
+        if (!indexingEnabled) return;
+
+        try (Directory directory = FSDirectory.open(Paths.get(indexPath, projectId.toString()));
+             Analyzer analyzer = new StandardAnalyzer()) {
+            
+            IndexWriterConfig config = new IndexWriterConfig(analyzer);
+            config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+            
+            try (IndexWriter writer = new IndexWriter(directory, config)) {
+                Document doc = new Document();
+                doc.add(new StringField("path", filePath, Field.Store.YES));
+                doc.add(new TextField("content", content, Field.Store.NO));
+                
+                writer.updateDocument(new Term("path", filePath), doc);
+            }
+        } catch (IOException e) {
+            log.error("Error updating index for project: {}, file: {}", projectId, filePath, e);
+        }
     }
 
     @Override
     @Transactional
     public void removeFromIndex(Long projectId, String filePath) {
-        log.info("Removing from index for project: {}, file: {}", projectId, filePath);
+        if (!indexingEnabled) return;
+
+        try (Directory directory = FSDirectory.open(Paths.get(indexPath, projectId.toString()));
+             Analyzer analyzer = new StandardAnalyzer()) {
+            
+            IndexWriterConfig config = new IndexWriterConfig(analyzer);
+            try (IndexWriter writer = new IndexWriter(directory, config)) {
+                writer.deleteDocuments(new Term("path", filePath));
+            }
+        } catch (IOException e) {
+            log.error("Error removing from index for project: {}, file: {}", projectId, filePath, e);
+        }
+    }
+
+    private void indexFile(IndexWriter writer, String projectRoot, File file) throws IOException {
+        String relativePath = Paths.get(projectRoot).relativize(file.toPath()).toString();
+        String content = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
         
-        // This would typically:
-        // 1. Remove the file from the search index
-        // 2. Clean up any associated metadata
-        // 3. Update project indexing statistics
+        Document doc = new Document();
+        doc.add(new StringField("path", relativePath, Field.Store.YES));
+        doc.add(new TextField("content", content, Field.Store.NO)); // Content is indexed but not stored to save space
         
-        // For now, just log the operation
-        log.info("Removed from index for project: {}, file: {}", projectId, filePath);
+        writer.updateDocument(new Term("path", relativePath), doc);
+    }
+
+    private boolean isIndexable(File file) {
+        String name = file.getName().toLowerCase();
+        return !file.isDirectory() && 
+               !name.startsWith(".") && 
+               !name.contains("node_modules") && 
+               !name.contains("target") && 
+               !name.contains(".git") &&
+               (name.endsWith(".java") || name.endsWith(".js") || name.endsWith(".ts") || 
+                name.endsWith(".py") || name.endsWith(".md") || name.endsWith(".txt") || 
+                name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".yml") || 
+                name.endsWith(".yaml") || name.endsWith(".html") || name.endsWith(".css"));
     }
 }
