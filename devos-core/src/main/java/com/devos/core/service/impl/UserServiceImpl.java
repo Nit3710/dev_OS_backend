@@ -195,8 +195,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsernameOrEmail(username, username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user;
+        try {
+            // Try to parse as Long (ID)
+            Long id = Long.parseLong(username);
+            user = userRepository.findById(id)
+                    .orElseGet(() -> userRepository.findByUsernameOrEmail(username, username)
+                            .orElseThrow(() -> new UsernameNotFoundException("User not found with id or username: " + username)));
+        } catch (NumberFormatException e) {
+            // Not a number, search by username or email
+            user = userRepository.findByUsernameOrEmail(username, username)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with username/email: " + username));
+        }
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(String.valueOf(user.getId())) // Use user ID as username for security context

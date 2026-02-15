@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/projects")
+@RequestMapping("/api/projects")
 @RequiredArgsConstructor
 @Slf4j
 public class ProjectController {
@@ -53,7 +53,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
         Project project = projectService.createProject(projectDto.toEntity());
         
@@ -62,7 +62,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<ProjectDto> updateProject(
             @PathVariable Long id,
             @Valid @RequestBody ProjectDto projectDto) {
@@ -74,7 +74,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         
@@ -94,7 +94,7 @@ public class ProjectController {
     }
 
     @PostMapping("/{id}/index")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
     public ResponseEntity<Void> indexProject(@PathVariable Long id) {
         // fileIndexingService should also be refactored or handles internally
         fileIndexingService.indexProject(id);

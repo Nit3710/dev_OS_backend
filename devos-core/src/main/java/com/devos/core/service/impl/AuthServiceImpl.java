@@ -157,12 +157,12 @@ public class AuthServiceImpl implements AuthService {
         claims.put("role", user.getRole());
         claims.put("email", user.getEmail());
         
-        return createToken(claims, user.getUsername(), jwtExpiration);
+        return createToken(claims, String.valueOf(user.getId()), jwtExpiration);
     }
 
     @Override
     public String generateRefreshToken(User user) {
-        return createToken(new HashMap<>(), user.getUsername(), refreshExpiration);
+        return createToken(new HashMap<>(), String.valueOf(user.getId()), refreshExpiration);
     }
 
     @Override
