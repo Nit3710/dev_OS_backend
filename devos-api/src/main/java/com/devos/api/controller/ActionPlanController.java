@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class ActionPlanController {
 
     private final ActionPlanService actionPlanService;
+    private final com.devos.core.service.ActionExecutorService actionExecutorService;
 
     @GetMapping("/{planId}")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
@@ -69,10 +70,11 @@ public class ActionPlanController {
             @PathVariable Long planId) {
         
         String jwtToken = token.replace("Bearer ", "");
-        ActionPlan actionPlan = actionPlanService.executeActionPlan(planId, jwtToken);
+        // Delegate to executor service which handles the actual logic + status updates
+        ActionPlan actionPlan = actionExecutorService.executePlan(planId, jwtToken);
         
-        log.info("Action plan execution started: {}", planId);
-        return ResponseEntity.accepted().body(ActionPlanDto.from(actionPlan));
+        log.info("Action plan execution completed: {}", planId);
+        return ResponseEntity.ok(ActionPlanDto.from(actionPlan));
     }
 
     @PostMapping("/{planId}/rollback")

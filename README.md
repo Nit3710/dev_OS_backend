@@ -52,6 +52,7 @@ docker-compose up -d
 ```
 
 3. The application will be available at `http://localhost:8080`
+4. API Documentation: `http://localhost:8080/swagger-ui.html`
 
 ### Manual Setup
 

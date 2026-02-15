@@ -28,7 +28,7 @@ public class ProjectController {
     private final FileIndexingService fileIndexingService;
 
     @GetMapping
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<ProjectDto>> getProjects(
             @RequestHeader("Authorization") String token,
             @RequestParam(defaultValue = "0") int page,
@@ -50,7 +50,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProjectDto> getProject(
             @RequestHeader("Authorization") String token,
             @PathVariable Long id) {
@@ -62,7 +62,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProjectDto> createProject(
             @RequestHeader("Authorization") String token,
             @Valid @RequestBody ProjectDto projectDto) {
@@ -75,7 +75,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProjectDto> updateProject(
             @RequestHeader("Authorization") String token,
             @PathVariable Long id,
@@ -89,7 +89,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteProject(
             @RequestHeader("Authorization") String token,
             @PathVariable Long id) {
@@ -102,7 +102,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}/file-tree")
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Object> getFileTree(
             @RequestHeader("Authorization") String token,
             @PathVariable Long id,
@@ -115,7 +115,7 @@ public class ProjectController {
     }
 
     @PostMapping("/{id}/index")
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> indexProject(
             @RequestHeader("Authorization") String token,
             @PathVariable Long id) {
@@ -128,7 +128,7 @@ public class ProjectController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('DEVELOPER') or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ProjectDto>> searchProjects(
             @RequestHeader("Authorization") String token,
             @RequestParam String query) {

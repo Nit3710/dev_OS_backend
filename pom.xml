@@ -32,7 +32,6 @@
         <module>devos-core</module>
         <module>devos-api</module>
         <module>devos-ai-integration</module>
-        <module>devos-file-operations</module>
         <module>devos-application</module>
     </modules>
 
